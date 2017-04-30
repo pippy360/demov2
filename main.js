@@ -1609,4 +1609,4 @@ function loadImageAndInit(imageSrc) {
 
 //loadImageAndInit('rick1.jpg');
 
-loadImageAndInit('dog1_resize3.jpg');
+loadImageAndInit('images/dog1_resize3.jpg');
