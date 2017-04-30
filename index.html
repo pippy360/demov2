@@ -1,0 +1,331 @@
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="math.js" type="text/javascript"></script>
+    <!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+          integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    <style>
+        document {
+            font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+        }
+
+        #mainContentContainer {
+            padding: 0px 30px;
+            margin: 0px auto;
+            width: 1200px;
+            display: block;
+        }
+
+        .bigCanvasContainer {
+            /*width: 580px;*/
+            float: left;
+        }
+
+        .move {
+            cursor: move;
+        }
+
+        #lineSvgTag {
+            pointer-events: none;
+        }
+
+        .btn {
+            font-size: 12px;
+        }
+
+        #triangleOutputList {
+            max-width: 400px;
+            height: 320px;
+            overflow: auto;
+            margin-top: 20px;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        .canvasWrapper {
+            display: block;
+            /*width: 285px;*/
+            float: left;
+            margin-top: 25px;
+            margin-bottom: 40px;
+            margin-right: 68px;
+        }
+
+        .trianglesListWrapper {
+            margin-left: 40px;
+            height: 550px;
+            width: 400px;
+            display: inline-block;
+            float: right;
+            margin-top: 40px;
+        }
+
+        .distanceOutputHelpMessage {
+            padding: 8px;
+            text-align: center;
+        }
+
+        .trianglesListInnerWrapper {
+            height: 410px;
+            display: block;
+            overflow: auto;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.19);
+        }
+
+        .table-striped > tbody > tr:nth-child(2n+1) > td, .table-striped > tbody > tr:nth-child(2n+1) > th {
+            background-color: rgba(0, 0, 0, 0.01);
+        }
+
+        .triangleListBody {
+            overflow: auto;
+        }
+
+        .header {
+            background-color: #183D4E;
+            width: 100%;
+            min-width: 1200px;
+            color: #ffffff;
+            overflow: hidden;
+            font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+            text-align: center;
+        }
+
+        .headerInner {
+            margin: 48px auto;
+            width: 1140px;
+        }
+
+        .headerInner h1 {
+            font-size: 32px;
+        }
+
+        .buttonsWrapper {
+            margin: 8px auto 0px auto;
+            padding: 0px 30px;
+            width: 1200px;
+        }
+
+        .buttons {
+        }
+
+        .canvasTitle {
+            color: rgba(0, 0, 0, .8);
+            padding-top: 10px;
+            display: block;
+            font-size: 12px;
+            margin-bottom: 5px;
+            padding-bottom: 0px;
+        }
+
+        .resultsTitle {
+            /*width: 100%;*/
+            /*text-align: center;*/
+        }
+
+        canvas {
+            box-shadow: 0px 0px 8px 2px rgba(24, 61, 78, .2);
+        }
+
+        .triangleCountOutput {
+            color: rgba(0, 0, 0, .8);
+            display: block;
+            font-size: 12px;
+            margin: 0px;
+            padding: 0px;
+            margin-top: 3px;
+        }
+
+        .aboutArea {
+            width: 1200px;
+            padding: 40px 60px;
+            margin: auto;
+        }
+
+        .smallCanvasWrapper {
+            /*width: 750px;*/
+            padding-right: 20px;
+            height: 200px;
+        }
+
+        #fragmentCanvas2 {
+
+            float: right;
+        }
+
+        .distanceOutput {
+            width: 308px;
+            float: left;
+        }
+
+        .distanceOutputTitle {
+            padding-top: 30px;
+            font-size: 16px;
+            color: rgba(0, 0, 0, .87);
+            text-align: center;
+            width: 100%;
+        }
+
+        .distanceOutputData {
+            width: 100%;
+            text-align: center;
+            font-size: 20px;
+            color: black;
+        }
+
+        .fragmentCanvasWrapper {
+            /*width: 165px;*/
+            float: left;
+        }
+
+        .mainContentContainerWrapper {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            background-color: #f7f7f7;
+            width: 100%;
+            min-width: 1200px;
+            padding-bottom: 60px;
+            height: 600px;
+        }
+
+        .transformationsLabel {
+            font-size: 12px;
+        }
+
+        .selectedTriangleTR {
+            background-color: rgba(24, 61, 78, .9);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="fullPageWraper">
+    <div class="header">
+        <div class="headerInner">
+            <h1>Image Matching Demo</h1>
+            <p>Click and drag on an image to apply a transformation.</p>
+        </div>
+    </div>
+    <div class="buttonsWrapper">
+        <div class="buttons">
+            <span data-toggle="buttons">
+                <label class="btn btn-secondary active"
+                       onclick="setCurrnetOperation(enum_TransformationOperation.TRANSLATE)">
+                    <input type="radio" name="options" autocomplete="off" checked>Move</input>
+                </label>
+                <label class="btn btn-secondary"
+                       onclick="setCurrnetOperation(enum_TransformationOperation.NON_UNIFORM_SCALE)">
+                    <input type="radio" name="options" autocomplete="off">Scale</input>
+                </label>
+                <label class="btn btn-secondary"
+                       onclick="setCurrnetOperation(enum_TransformationOperation.UNIFORM_SCALE)">
+                    <input type="radio" name="options" autocomplete="off">Uniform Scale</input>
+                </label>
+                <label class="btn btn-secondary" onclick="setCurrnetOperation(enum_TransformationOperation.ROTATE)">
+                    <input type="radio" name="options" autocomplete="off">Rotate</input>
+                </label>
+                <label class="btn btn-secondary" onclick="setCurrnetOperation(enum_TransformationOperation.CROP)">
+                    <input type="radio" name="options" autocomplete="off">Crop</input>
+                </label>
+            </span>
+            <!--<button class="btn btn-default" onclick="toggleDrawKeypointsMode()" >Toggle DrawKeypoints</button>-->
+            <!--<button class="btn btn-default" style="float:right;" onclick="callSearch()">CompareImages</button>-->
+            <span style="float: right" data-toggle="buttons">
+                <label class="btn btn-secondary" onclick="toggleDrawUIOverlayMode()">
+                    <input type="checkbox" name="options2" autocomplete="off">Hide UI Overlay</input>
+                </label>
+            </span>
+        </div>
+        <div style="float: right">
+        </div>
+    </div>
+    <div class="mainContentContainerWrapper">
+        <div id="mainContentContainer" class="">
+            <div class="clickAndDragTitle">
+            </div>
+            <div id="bigCanvasContainer" class="bigCanvasContainer">
+                <div class="canvasWrapper">
+                    <label class="canvasTitle">Query Image</label>
+                    <canvas id="interactiveCanvas" width="280" height="280"></canvas>
+                    <label class="triangleCountOutput" id="number_of_triangles_output"></label>
+                </div>
+                <div class="canvasWrapper">
+                    <label class="canvasTitle">Image Stored In Database</label>
+                    <canvas id="referenceCanvas" width="280" height="280"></canvas>
+                    <label class="triangleCountOutput" id="number_of_matching_triangles_output"></label>
+                </div>
+                <div id="output">
+                    <div class="smallCanvasWrapper">
+                        <div class="fragmentCanvasWrapper">
+                            <canvas id="fragmentCanvas1" height="160" width="160"></canvas>
+                        </div>
+                        <div class="distanceOutput">
+                            <label class="distanceOutputTitle">Perceptual hash distance:</label>
+                            <label id="pHashDistanceOutputWrapper" class="distanceOutputData"> 0 </label>
+                        </div>
+                        <div class="fragmentCanvasWrapper">
+                            <canvas id="fragmentCanvas2" height="160" width="160"></canvas>
+                        </div>
+                    </div>
+
+                    <!--<span id="searchResultsOutput">-->
+                    <!--<div id="searchResultsOutputDiv" class="alert alert-success" role="alert">-->
+                    <!--<strong>Matched!</strong> X matches found-->
+                    <!--</div>-->
+                    <!--</span>-->
+                </div>
+            </div>
+            <div class="trianglesListWrapper">
+                <p class="alert-info distanceOutputHelpMessage">Hover over a result in the
+                    list below to see the matched image fragments. </p>
+                <h5 class="resultsTitle">Results</h5>
+                <div class="trianglesListInnerWrapper">
+                    <table class="triangleList table ">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Area</th>
+                        </tr>
+                        </thead>
+                        <tbody id="triangleListBody" role="menu">
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--<div class="aboutArea">-->
+    <!--<h1>About</h1>-->
+    <!--<p>Stuff here....</p>-->
+    <!--</div>-->
+</div>
+<svg id="lineSvgTag" style="display: inline;position: absolute; min-height: 4px;min-width: 4px;">
+    <line id="line" x1="0" y1="0" x2="0" y2="0" style="stroke:rgb(255,0,0);stroke-width:2"/>
+</svg>
+<!-- jQuery first, then Tether, then Bootstrap JS. -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"
+        integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
+        integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+        crossorigin="anonymous"></script>
+<script src="main.js"></script>
+
+<script>
+</script>
+</body>
+<script>
+
+</script>
+</html>
