@@ -13,10 +13,10 @@ var g_targetTriangleScale = {
 }
 const INTERACTIVE_CANVAS_ID = "interactiveCanvas";
 const REFERENCE_CANVAS_ID = "referenceCanvas";
-const NUMBER_OF_KEYPOINTS = 20;
+var g_numberOfKeypoints = 30;
 var g_shouldDrawUIOverlay = true;
 var g_shouldDrawTriangles = true;
-var g_shouldDrawKeypoints = true;
+var g_shouldDrawKeypoints = false;
 var g_enableFillEffect = false;
 var g_minCroppingPolygonArea = 600;
 var g_referenceImageHighlightedTriangle = null;
@@ -82,6 +82,7 @@ var g_steps = [
 var g_currentActiveCanvasId = INTERACTIVE_CANVAS_ID
 
 var g_isMouseDownAndClickedOnCanvas = false;
+var g_forceApplyTransformations = false;
 
 var enum_TransformationOperation = {
     TRANSLATE: 1,
@@ -96,7 +97,7 @@ var g_interactiveCanvasCroppingPolygonPoints = [];
 var g_referenceCanvasCroppingPolygonPoints = [];
 var g_interactiveCanvasCroppingPolygonInverseMatrix = getIdentityMatrix();//the inverse of the transformations applied at the time of drawing
 var g_referenceCanvasCroppingPolygonInverseMatrix = getIdentityMatrix();//the inverse of the transformations applied at the time of drawing
-var g_dogImage = new Image();
+var g_canvasImage = new Image();
 var g_keypoints = [];
 var g_cachedCalculatedReferenceCanvasKeypoints = [];
 var g_cachedCalculatedInteractiveCanvasKeypoints = [];
@@ -115,7 +116,7 @@ function toggleDrawTrianglesMode() {
 }
 
 function getBackgroundImage() {
-    return g_dogImage;
+    return g_canvasImage;
 }
 
 function getCroppingPointsTransformationMatrix() {
@@ -144,8 +145,8 @@ var g_interactiveImageTransformation;
 function getIdentityTransformations() {
     var ret = {
         transformationCenterPoint: {
-            x: 1920 / 2,
-            y: 1080 / 2
+            x: 0,
+            y: 0
         },
         uniformScale: 1,
         directionalScaleMatrix: getIdentityMatrix(),
@@ -890,6 +891,7 @@ function getColourForIndex(pointDistance) {
 
 
 function drawTriangles(canvasContext, triangles) {
+    canvasContext.beginPath();
     for (var i = 0; i < triangles.length; i++) {
         var colour = getColourForIndex(getEuclideanDistance(triangles[i][0], triangles[i][1]));
         drawTriangle(canvasContext, triangles[i], colour);
@@ -1145,7 +1147,7 @@ function draw() {
     var interactiveImageTransformations = getInteractiveImageTransformations();
     var referenceImageTransformations = getReferenceImageTransformations();
     var transformationChangesMatrix = convertTransformationObjectToTransformationMatrix(transformationChanges);
-    if (g_isMouseDownAndClickedOnCanvas) {
+    if (g_isMouseDownAndClickedOnCanvas || g_forceApplyTransformations) {
         if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
             interactiveImageTransformations = matrixMultiply(transformationChangesMatrix, interactiveImageTransformations);
         } else {
@@ -1589,8 +1591,14 @@ function setCurrnetOperation(newState) {
     applyTransformationEffects(newState);
 }
 
+function changeNumberOfKeypoints(newNumberOfKeypoints) {
+    g_numberOfKeypoints = newNumberOfKeypoints;
+    g_keypoints = generateRandomKeypoints({x: g_canvasImage.width, y: g_canvasImage.height}, g_numberOfKeypoints);
+    draw();
+}
+
 function init() {
-    g_keypoints = generateRandomKeypoints({x: g_dogImage.width, y: g_dogImage.height}, NUMBER_OF_KEYPOINTS);
+    g_keypoints = generateRandomKeypoints({x: g_canvasImage.width, y: g_canvasImage.height}, g_numberOfKeypoints);
     wipeTransformationChanges();
     g_interactiveImageTransformation = getIdentityMatrix();
     g_referenceImageTransformation = getIdentityMatrix();
@@ -1600,11 +1608,39 @@ function init() {
 }
 
 function loadImageAndInit(imageSrc) {
-    //g_dogImage.src = 'dog1_resize.jpg';
-    g_dogImage.src = imageSrc;
-    g_dogImage.onload = function () {
+    //g_canvasImage.src = 'dog1_resize.jpg';
+    g_canvasImage.src = imageSrc;
+    g_canvasImage.onload = function () {
         init();
     };
+}
+
+var start = 0;
+function animateStep(timestamp) {
+    if (!start) start = timestamp;
+    var progress = timestamp - start;
+    g_transformationChanges.rotation = progress/100%360;
+    g_transformationChanges.uniformScale = progress/100000%360;
+    console.log(progress%360);
+
+    if (g_transformationChanges.uniformScale < 1) {
+        window.requestAnimationFrame(animateStep);
+    }
+    g_skipListGen = true;
+    g_forceApplyTransformations = true;
+    draw();
+    g_forceApplyTransformations = false;
+    g_skipListGen = false;
+}
+
+
+function animate() {
+    g_transformationChanges.transformationCenterPoint = {
+        x: 280/2,
+        y: 280/2
+    };
+
+    window.requestAnimationFrame(animateStep);
 }
 
 //loadImageAndInit('rick1.jpg');
