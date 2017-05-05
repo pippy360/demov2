@@ -7,82 +7,80 @@
 //  #####  ######  ####  #####  #    # ######       #    #    # #    #  ####
 //global vars
 
-var g_targetTriangleScale = {
-    x: 160,
-    y: 160
+var g_drawingOptions = {
+    generateTriangleResultList: false,
+    drawUiOverlay: true,
+    drawKeypoints: false,
+    drawTriangles: true,
+    var g_forceApplyTransformations = false;
+}
+
+//
+// consts
+//
+
+const g_targetTriangleScale = {
+    x: 0,
+    y: 0
 }
 const INTERACTIVE_CANVAS_ID = "interactiveCanvas";
 const REFERENCE_CANVAS_ID = "referenceCanvas";
 var g_numberOfKeypoints = 30;
-var g_shouldDrawUIOverlay = true;
-var g_shouldDrawTriangles = true;
-var g_shouldDrawKeypoints = false;
-var g_enableFillEffect = false;
-var g_minCroppingPolygonArea = 600;
-var g_referenceImageHighlightedTriangle = null;
-var g_interactiveImageHighlightedTriangle = null;
-var g_triangleMapByReferenceTriangleIndex = new Map();
-// var g_maxPntDist = 200;
-// var g_minPntDist = 150;
-// var g_minTriArea = 400;//11000;
-//var g_maxTriArea = 21000;
-var redrawRequired = false;
-var g_skipListGen = false;//TODO: FIXME: remove this hack
-var g_steps = [
-    {
-        minPntDist: 85,
-        maxPntDist: 90,
-        minTriArea: 30,
-        colour: [255, 255, 255],
-    },
-    {
-        minPntDist: 90,
-        maxPntDist: 100,
-        minTriArea: 30,
-        colour: [0, 0, 255],
-    },
-    {
-        minPntDist: 100,
-        maxPntDist: 150,
-        minTriArea: 30,
-        colour: [255, 0, 0],
-    },
-    {
-        minPntDist: 150,
-        maxPntDist: 200,
-        minTriArea: 30,
-        colour: [100, 250, 250],
-    },
-    {
-        minPntDist: 50,
-        maxPntDist: 450,
-        minTriArea: 30,
-        colour: [100, 255, 100],
-    },
-    // {
-    //     minPntDist: 250,
-    //     maxPntDist: 300,
-    //     minTriArea: 30,
-    //     colour: [255, 255, 0],
-    // },
-    // {
-    //     minPntDist: 300,
-    //     maxPntDist: 350,
-    //     minTriArea: 30,
-    //     colour: [255, 200, 200],
-    // },
-    // {
-    //     minPntDist: 350,
-    //     maxPntDist: 450,
-    //     minTriArea: 30,
-    //     colour: [120, 250, 120],
-    // },
+const g_minCroppingPolygonArea = 600;
+
+function newStep(minPntDist, maxPntDist, minTriArea, colour){
+    return {
+        minPntDist: minPntDist,
+        maxPntDist: maxPntDist,
+        minTriArea: minTriArea,
+        colour: colour
+    }
+}
+
+const g_steps = [
+    newStep(85,90,30,[255, 255, 255]),
+    newStep(90,100,30,[0, 0, 255]),
+    newStep(100,150,30,[255, 0, 0]),
+    newStep(150,200,30,[100, 250, 250]),
+    newStep(50,450,30,[100, 255, 100])
 ];
 
-var g_currentActiveCanvasId = INTERACTIVE_CANVAS_ID
+//
+// globalState
+//
 
-var g_isMouseDownAndClickedOnCanvas = false;
-var g_forceApplyTransformations = false;
+var g_layerState = {
+    appliedTransformations: [],
+    visable: true,
+    backgroundImageObj: null,
+    layerColour: null, //used for canvas UI overlay elements
+    g_keypoints: [],
+    g_cachedCalculatedReferenceCanvasKeypoints: [],
+    g_cachedCalculatedInteractiveCanvasKeypoints: [],
+
+};
+
+var g_canvasState = {
+    layers: [],
+
+};
+
+var globalState = {
+    g_currentActiveCanvasId: INTERACTIVE_CANVAS_ID,
+    triangleMapByReferenceTriangleIndex: new Map(),
+    referenceImageHighlightedTriangle: null,
+    interactiveImageHighlightedTriangle: null,
+    g_isMouseDownAndClickedOnCanvas: false,
+    canvasCroppingPolygonPoints: [],
+    //the inverse of the transformations applied at the time of drawing
+    canvasCroppingPolygonInverseMatrix: getIdentityMatrix(),
+    currentTranformationOperationState: null,
+    temporaryAppliedTransformations: [],
+    pageMouseDownPosition: {
+        x: 0,
+        y: 0
+    }
+};
 
 var enum_TransformationOperation = {
     TRANSLATE: 1,
@@ -91,16 +89,19 @@ var enum_TransformationOperation = {
     ROTATE: 4,
     CROP: 5
 };
-var g_currentTranformationOperationState = enum_TransformationOperation.TRANSPOSE;
 
-var g_interactiveCanvasCroppingPolygonPoints = [];
-var g_referenceCanvasCroppingPolygonPoints = [];
-var g_interactiveCanvasCroppingPolygonInverseMatrix = getIdentityMatrix();//the inverse of the transformations applied at the time of drawing
-var g_referenceCanvasCroppingPolygonInverseMatrix = getIdentityMatrix();//the inverse of the transformations applied at the time of drawing
-var g_canvasImage = new Image();
-var g_keypoints = [];
-var g_cachedCalculatedReferenceCanvasKeypoints = [];
-var g_cachedCalculatedInteractiveCanvasKeypoints = [];
+
+//
+// getters
+//
+
+function getInteractiveCanvas() {
+    return g_interactiveCanvas;
+}
+
+function getReferenceCanvas() {
+    return g_referenceCanvas;
+}
 
 function toggleDrawUIOverlayMode() {
     g_shouldDrawUIOverlay = !g_shouldDrawUIOverlay;
@@ -123,13 +124,6 @@ function getCroppingPointsTransformationMatrix() {
     return g_interactiveCanvasCroppingPolygonInverseMatrix;
 }
 
-var g_transformationChanges;//TODO: rename to something better
-
-var g_pageMouseDownPosition = {
-    x: 0,
-    y: 0
-};
-
 function wipeTransformationChanges() {
     g_transformationChanges = getIdentityTransformations();
 }
@@ -137,10 +131,6 @@ function wipeTransformationChanges() {
 function getTransformationChanges() {
     return g_transformationChanges;
 }
-
-var g_referenceImageTransformation;
-
-var g_interactiveImageTransformation;
 
 function getIdentityTransformations() {
     var ret = {
@@ -931,12 +921,6 @@ function drawClosingPolygon(ctx, inPoints, showFillEffect) {
     ctx.stroke();
 };
 
-function drawCroppingPoints(canvasContext, croppingPoints, isActiveCanvas) {
-    var transformedPolyPoints = croppingPoints;//getTransformedPolyPoints(g, g_scale, g_rotation, g_scaleDirection, g_translate, {x: 0, y: 0}, {x: 512, y: 512});
-    var showFillEffect = g_isMouseDownAndClickedOnCanvas && g_currentTranformationOperationState == enum_TransformationOperation.CROP;
-    showFillEffect = showFillEffect && isActiveCanvas;
-    drawClosingPolygon(canvasContext, transformedPolyPoints, showFillEffect);
-}
 
 function isPointInPolygon(point, vs) {
     // ray-casting algorithm based on
@@ -1124,30 +1108,78 @@ function buildReferenceAndInteractiveImageTrianglesByReferenceTriangleIndex(refe
 }
 
 function getTableEntry(triangleString, key, area) {
+    //FIXME:
+    var outputStrClass = "triangleTRAll " + "triangleTR " + triangleString;
     var outputStr =
-        "<tr class=\"triangleTRAll triangleTR" + triangleString + "\" onmouseover=\"highlightTriangle(" + triangleString + ")\">" +
-        "<td>" + key.value + "</td>" +
-        "<td>" + Math.round(area) + " </td>" +
+        "<tr class=\""+outputStrClass+"\" onmouseover=\"highlightTriangle(" + triangleString + ")\">" +
+            "<td>" + key.value + "</td>" +
+            "<td>" + Math.round(area) + " </td>" +
         "</tr>";
     return outputStr;
 }
-function draw() {
 
-    //init variables
-    var interactiveCanvasContext = document.getElementById('interactiveCanvas').getContext('2d');
-    var referenceCanvasContext = document.getElementById('referenceCanvas').getContext('2d');
-    var transformationChanges = getTransformationChanges();
-    interactiveCanvasContext.clearRect(0, 0, 512, 512); // clear canvas
+function paintCanvasWhite(canvasContext) {
+    const canvas = canvasContext.canvas;
     interactiveCanvasContext.fillStyle = "#FFFFFF";
-    interactiveCanvasContext.fillRect(0, 0, 512, 512); // clear canvas
-    referenceCanvasContext.clearRect(0, 0, 512, 512); // clear canvas
-    referenceCanvasContext.fillStyle = "#FFFFFF";
-    referenceCanvasContext.fillRect(0, 0, 512, 512); // clear canvas
+    interactiveCanvasContext.fillRect(0, 0, canvas.width, canvas.height); // clear canvas
+}
 
-    var interactiveImageTransformations = getInteractiveImageTransformations();
-    var referenceImageTransformations = getReferenceImageTransformations();
-    var transformationChangesMatrix = convertTransformationObjectToTransformationMatrix(transformationChanges);
+function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas) {
+    var keypoints = getKeypoints();
+    var interactiveImageTransformedKeypoints = computeTransformedKeypoints(keypoints, interactiveImageTransformations);
+
+    var canvasDimenstions = {
+        x: canvasContext.canvas.width,
+        y: canvasContext.canvas.height
+    };
+    var interactiveFilteredKeypoints = getVisableKeypoints(interactiveImageTransformedKeypoints, interactiveCanvasDimenstions, interactiveTransformedCroppingPoints2);
+
+    g_cachedCalculatedInteractiveCanvasKeypoints = interactiveFilteredKeypoints;
+    if (g_shouldDrawKeypoints) {
+        drawKeypoints(referenceCanvasContext, referenceImageTransformedKeypoints);
+    }
+
+    var interactiveTrianglesForAllSteps = [];
+    var filteredReferenceImageTrianglesForAllSteps = [];
+    if (g_shouldDrawTriangles) {
+        for (var i = 0; i < g_steps.length; i++) {
+            var currentStep = g_steps[i];
+            var tempTriangles = computeTriangles(interactiveFilteredKeypoints, currentStep.maxPntDist, currentStep.minPntDist, currentStep.minTriArea);
+            interactiveTrianglesForAllSteps = interactiveTrianglesForAllSteps.concat(tempTriangles);
+        }
+
+        var projectionMatrix = matrixMultiply(referenceImageTransformations, math.inv(interactiveImageTransformations));
+        var trianglesProjectedOntoReferenceCanvas = computeTransformedTrianglesWithMatrix(interactiveTrianglesForAllSteps, projectionMatrix);
+
+        for (var i = 0; i < g_steps.length; i++) {
+
+            //FIXME: this doesn't handle duplicates
+
+            var currentStep = g_steps[i];
+            var tempFilteredReferenceImageTriangles = filterInvalidTriangles(trianglesProjectedOntoReferenceCanvas,
+                referenceCanvasDimenstions, currentStep.minPntDist, currentStep.maxPntDist, currentStep.minTriArea, referenceTransformedCroppingPoints2);
+
+            filteredReferenceImageTrianglesForAllSteps = filteredReferenceImageTrianglesForAllSteps.concat(tempFilteredReferenceImageTriangles);
+        }
+
+        g_triangleMapByReferenceTriangleIndex = buildReferenceAndInteractiveImageTrianglesByReferenceTriangleIndex(filteredReferenceImageTrianglesForAllSteps, interactiveTrianglesForAllSteps);
+
+        var filteredReferenceImageTrianglesForAllStepsWithoutIndexes = getAllTrianglesFromIndexTriangleObjects(filteredReferenceImageTrianglesForAllSteps);
+        drawTriangles(referenceCanvasContext, filteredReferenceImageTrianglesForAllStepsWithoutIndexes);
+        drawTriangles(interactiveCanvasContext, interactiveTrianglesForAllSteps);
+    }
+
+}
+
+function drawImageWithAppliedTransformations() {
+
+    const interactiveCanvas = getInteractiveCanvas();
+    const interactiveCanvasContext = interactiveCanvas.getContext('2d');
+    paintCanvasWhite(interactiveCanvasContext);
+
+    var referenceImageTransformations = getReferenceImageTransformations();    
     if (g_isMouseDownAndClickedOnCanvas || g_forceApplyTransformations) {
+        const transformationChangesMatrix = convertTransformationObjectToTransformationMatrix(transformationChanges);
         if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
             interactiveImageTransformations = matrixMultiply(transformationChangesMatrix, interactiveImageTransformations);
         } else {
@@ -1155,97 +1187,58 @@ function draw() {
         }
     }
 
-    drawBackgroudImageWithTransformationMatrix(interactiveCanvasContext, getBackgroundImage(), interactiveImageTransformations);
-    drawBackgroudImageWithTransformationMatrix(referenceCanvasContext, getBackgroundImage(), referenceImageTransformations);
+    var showFillEffect = g_isMouseDownAndClickedOnCanvas
+        showFillEffect = showFillEffect && g_currentTranformationOperationState == enum_TransformationOperation.CROP;
+        showFillEffect = showFillEffect && isActiveCanvas;
 
+    showFillEffect = isActive;
+    drawClosingPolygon(referenceCanvasContext, referenceTransformedCroppingPoints2, showFillEffect);
+
+    drawBackgroudImageWithTransformationMatrix(interactiveCanvasContext, getBackgroundImage(), interactiveImageTransformations);
+}
+
+function generateOutputList() {
+    if (!g_skipListGen) {
+        var outputStr = "";
+        var keys = g_triangleMapByReferenceTriangleIndex.keys();
+        for (var key = keys.next(); !key.done; key = keys.next()) { //iterate over keys
+            var triangleString = key.value;
+            var tri = g_triangleMapByReferenceTriangleIndex.get(key.value).referenceTriangle;
+            var area = getArea(tri);
+            outputStr = outputStr + getTableEntry(triangleString, key, area);
+        }
+        $("#triangleListBody").html(outputStr);
+        $(".list-group-item").hover(function () {
+                $(this).addClass("active");
+            },
+            function () {
+                $(this).removeClass("active");
+            });
+    }
+    $("#number_of_triangles_output").html("Possible Matches: " + interactiveTrianglesForAllSteps.length);
+    $("#number_of_matching_triangles_output").html("Actual Matches: " + g_triangleMapByReferenceTriangleIndex.size);
+}
+
+function draw() {
+
+    const referenceCanvas = getReferenceCanvas();
+    const referenceCanvasContext = referenceCanvas.getContext('2d');
+    paintCanvasWhite(referenceCanvasContext);    
 
     var referenceTransformedCroppingPoints1 = getTransformedCroppingPointsMatrix(g_referenceCanvasCroppingPolygonPoints, g_referenceCanvasCroppingPolygonInverseMatrix);
     var referenceTransformedCroppingPoints2 = getTransformedCroppingPointsMatrix(referenceTransformedCroppingPoints1, referenceImageTransformations);
 
-    var interactiveTransformedCroppingPoints1 = getTransformedCroppingPointsMatrix(g_interactiveCanvasCroppingPolygonPoints, g_interactiveCanvasCroppingPolygonInverseMatrix);
-    var interactiveTransformedCroppingPoints2 = getTransformedCroppingPointsMatrix(interactiveTransformedCroppingPoints1, interactiveImageTransformations);
+    const transformationChanges = getTransformationChanges();
+    
+    var interactiveImageTransformations = getInteractiveImageTransformations();
+
+    drawClosingPolygon(interactiveCanvasContext, interactiveTransformedCroppingPoints2, showFillEffect);
 
     if (g_shouldDrawUIOverlay) {
-
-        var keypoints = getKeypoints();
-        var interactiveImageTransformedKeypoints = computeTransformedKeypoints(keypoints, interactiveImageTransformations);
-        var referenceImageTransformedKeypoints = computeTransformedKeypoints(keypoints, referenceImageTransformations);
-
-        var interactiveCanvasDimenstions = {
-            x: interactiveCanvasContext.canvas.width,
-            y: interactiveCanvasContext.canvas.height
-        };
-        var referenceCanvasDimenstions = {
-            x: referenceCanvasContext.canvas.width,
-            y: referenceCanvasContext.canvas.height
-        };
-        var interactiveFilteredKeypoints = getVisableKeypoints(interactiveImageTransformedKeypoints, interactiveCanvasDimenstions, interactiveTransformedCroppingPoints2);
-
-        g_cachedCalculatedInteractiveCanvasKeypoints = interactiveFilteredKeypoints;
-        g_cachedCalculatedReferenceCanvasKeypoints = referenceImageTransformedKeypoints;
-        if (g_shouldDrawKeypoints) {
-            drawKeypoints(referenceCanvasContext, referenceImageTransformedKeypoints);
-            drawKeypoints(interactiveCanvasContext, interactiveFilteredKeypoints);
-        }
-
-        var interactiveTrianglesForAllSteps = [];
-        var filteredReferenceImageTrianglesForAllSteps = [];
-        if (g_shouldDrawTriangles) {
-            for (var i = 0; i < g_steps.length; i++) {
-                var currentStep = g_steps[i];
-                var tempTriangles = computeTriangles(interactiveFilteredKeypoints, currentStep.maxPntDist, currentStep.minPntDist, currentStep.minTriArea);
-                interactiveTrianglesForAllSteps = interactiveTrianglesForAllSteps.concat(tempTriangles);
-            }
-
-            var projectionMatrix = matrixMultiply(referenceImageTransformations, math.inv(interactiveImageTransformations));
-            var trianglesProjectedOntoReferenceCanvas = computeTransformedTrianglesWithMatrix(interactiveTrianglesForAllSteps, projectionMatrix);
-
-            for (var i = 0; i < g_steps.length; i++) {
-
-                //FIXME: this doesn't handle duplicates
-
-                var currentStep = g_steps[i];
-                var tempFilteredReferenceImageTriangles = filterInvalidTriangles(trianglesProjectedOntoReferenceCanvas,
-                    referenceCanvasDimenstions, currentStep.minPntDist, currentStep.maxPntDist, currentStep.minTriArea, referenceTransformedCroppingPoints2);
-
-                filteredReferenceImageTrianglesForAllSteps = filteredReferenceImageTrianglesForAllSteps.concat(tempFilteredReferenceImageTriangles);
-            }
-
-            g_triangleMapByReferenceTriangleIndex = buildReferenceAndInteractiveImageTrianglesByReferenceTriangleIndex(filteredReferenceImageTrianglesForAllSteps, interactiveTrianglesForAllSteps);
-
-            var filteredReferenceImageTrianglesForAllStepsWithoutIndexes = getAllTrianglesFromIndexTriangleObjects(filteredReferenceImageTrianglesForAllSteps);
-            drawTriangles(referenceCanvasContext, filteredReferenceImageTrianglesForAllStepsWithoutIndexes);
-            drawTriangles(interactiveCanvasContext, interactiveTrianglesForAllSteps);
-        }
-        //add triangles to side bar
-
-        if (!g_skipListGen) {
-            var outputStr = "";
-            var keys = g_triangleMapByReferenceTriangleIndex.keys();
-            for (var key = keys.next(); !key.done; key = keys.next()) { //iterate over keys
-                var triangleString = key.value;
-                var tri = g_triangleMapByReferenceTriangleIndex.get(key.value).referenceTriangle;
-                var area = getArea(tri);
-                outputStr = outputStr + getTableEntry(triangleString, key, area);
-            }
-            $("#triangleListBody").html(outputStr);
-            $(".list-group-item").hover(function () {
-                    $(this).addClass("active");
-                },
-                function () {
-                    $(this).removeClass("active");
-                });
-        }
-        $("#number_of_triangles_output").html("Possible Matches: " + interactiveTrianglesForAllSteps.length);
-        $("#number_of_matching_triangles_output").html("Actual Matches: " + g_triangleMapByReferenceTriangleIndex.size);
+        drawCanvasUiOverlay();
     }
-    if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-        drawCroppingPoints(interactiveCanvasContext, interactiveTransformedCroppingPoints2, true);
-        drawCroppingPoints(referenceCanvasContext, referenceTransformedCroppingPoints2, false);
-    } else {
-        drawCroppingPoints(interactiveCanvasContext, interactiveTransformedCroppingPoints2, false);
-        drawCroppingPoints(referenceCanvasContext, referenceTransformedCroppingPoints2, true);
-    }
+
+    generateOutputList()
 
     //window.requestAnimationFrame(draw);
 }
@@ -1642,7 +1635,5 @@ function animate() {
 
     window.requestAnimationFrame(animateStep);
 }
-
-//loadImageAndInit('rick1.jpg');
 
 loadImageAndInit('images/dog1_resize3.jpg');

@@ -205,6 +205,14 @@
             background-color: rgba(24, 61, 78, .9);
             color: white;
         }
+        .fishImage{
+            width: 500px;
+            height: 500px;
+            background-image: url(images/fish_1.jpg);
+        }
+        .fishImage::hover{
+            background-image: url(images/fish_2.jpg);
+        }
     </style>
 </head>
 <body>
@@ -255,12 +263,14 @@
             <div id="bigCanvasContainer" class="bigCanvasContainer">
                 <div class="canvasWrapper">
                     <label class="canvasTitle">Query Image</label>
-                    <canvas id="interactiveCanvas" width="280" height="280"></canvas>
+                    <canvas id="queryImageCanvasImageContent" width="280" height="280"></canvas>
+                    <canvas id="queryImageCanvasUiOverlay" width="280" height="280"></canvas>
                     <label class="triangleCountOutput" id="number_of_triangles_output"></label>
                 </div>
                 <div class="canvasWrapper">
                     <label class="canvasTitle">Image Stored In Database</label>
-                    <canvas id="referenceCanvas" width="280" height="280"></canvas>
+                    <canvas id="databaseImageCanvasImageContent" width="280" height="280"></canvas>
+                    <canvas id="databaseImageCanvasUiOverlay" width="280" height="280"></canvas>
                     <label class="triangleCountOutput" id="number_of_matching_triangles_output"></label>
                 </div>
                 <div id="output">
@@ -307,8 +317,11 @@
     <div class="aboutArea">
     <h1>About</h1>
     <p>Stuff here....</p>
-        <img src="images/fish_1.jpg"/>
-        <img src="images/fish_2.jpg"/>
+        <div class="fishImage">
+            <img src="images/fish_1.jpg"/>
+            <img src="images/fish_2.jpg"/>
+
+        </div>
         <img src="images/volley_ball.jpg"/>
     </div>
 </div>
