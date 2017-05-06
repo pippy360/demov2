@@ -44,10 +44,6 @@
             margin-top: 20px;
         }
 
-        canvas {
-            border: 1px solid black;
-        }
-
         .canvasWrapper {
             display: block;
             /*width: 285px;*/
@@ -94,10 +90,12 @@
             overflow: hidden;
             font-family: "Roboto", "Helvetica", "Arial", sans-serif;
             text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border-bottom: solid 1px rgba(0,0,0,0.4);
         }
 
         .headerInner {
-            margin: 48px auto;
+            margin: 35px auto;
             width: 1140px;
         }
 
@@ -106,12 +104,15 @@
         }
 
         .buttonsWrapper {
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+
+        .buttonsInner {
             margin: 8px auto 0px auto;
             padding: 0px 30px;
             width: 1200px;
-        }
-
-        .buttons {
         }
 
         .canvasTitle {
@@ -123,15 +124,6 @@
             padding-bottom: 0px;
         }
 
-        .resultsTitle {
-            /*width: 100%;*/
-            /*text-align: center;*/
-        }
-
-        canvas {
-            box-shadow: 0px 0px 8px 2px rgba(24, 61, 78, .2);
-        }
-
         .triangleCountOutput {
             color: rgba(0, 0, 0, .8);
             display: block;
@@ -140,10 +132,16 @@
             padding: 0px;
             margin-top: 3px;
         }
-
+        .aboutAreaWrapper {
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 0px 4px rgba(0, 0, 0, 0.1);
+            margin: auto;
+        }
         .aboutArea {
-            width: 1200px;
-            padding: 40px 60px;
+            font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+            color: rgba(0,0,0,0.7);
+            width: 550px;
+            padding: 40px 0px;
             margin: auto;
         }
 
@@ -205,13 +203,54 @@
             background-color: rgba(24, 61, 78, .9);
             color: white;
         }
-        .fishImage{
-            width: 500px;
-            height: 500px;
-            background-image: url(images/fish_1.jpg);
+
+        .fishImage {
+            width: 485px;
+            height: 222px;
+            background-image: url('images/fish_1.jpg');
+            background-size: 485px 222px;
+            background-repeat: no-repeat;
         }
-        .fishImage::hover{
-            background-image: url(images/fish_2.jpg);
+
+        .fishImage:hover {
+            background-image: url('images/fish_2.jpg');
+        }
+
+        .canvasBottom {
+            position: absolute;
+        }
+
+        .canvasTop {
+            position: absolute;
+        }
+
+        .twoCanvasWrapper {
+            width: 280px;
+            height: 280px;
+        }
+
+        .canvasShadow {
+            /*border: 1px solid black;*/
+            box-shadow: 0px 0px 8px 2px rgba(24, 61, 78, .2);
+        }
+        .moreWrapper {
+            position: relative;
+        }
+        .more {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+        }
+        .moreButton {
+            position: absolute;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            box-shadow: 0 4px 5px 0 rgba(0,0,0,.14), 0 1px 10px 0 rgba(0,0,0,.12), 0 2px 4px -1px rgba(0,0,0,.2);
+            border: 0px;
+            background-color: white;
+            top: -28px;
+            left: -28px;
         }
     </style>
 </head>
@@ -224,7 +263,7 @@
         </div>
     </div>
     <div class="buttonsWrapper">
-        <div class="buttons">
+        <div class="buttonsInner">
             <span data-toggle="buttons">
                 <label class="btn btn-secondary active"
                        onclick="setCurrnetOperation(enum_TransformationOperation.TRANSLATE)">
@@ -263,27 +302,33 @@
             <div id="bigCanvasContainer" class="bigCanvasContainer">
                 <div class="canvasWrapper">
                     <label class="canvasTitle">Query Image</label>
-                    <canvas id="queryImageCanvasImageContent" width="280" height="280"></canvas>
-                    <canvas id="queryImageCanvasUiOverlay" width="280" height="280"></canvas>
+                    <div class="canvasShadow twoCanvasWrapper">
+                        <canvas id="queryImageCanvasImageContent" class="canvasBottom" width="280"
+                                height="280"></canvas>
+                        <canvas id="queryImageCanvasUiOverlay" class="canvasTop" width="280" height="280"></canvas>
+                    </div>
                     <label class="triangleCountOutput" id="number_of_triangles_output"></label>
                 </div>
                 <div class="canvasWrapper">
                     <label class="canvasTitle">Image Stored In Database</label>
-                    <canvas id="databaseImageCanvasImageContent" width="280" height="280"></canvas>
-                    <canvas id="databaseImageCanvasUiOverlay" width="280" height="280"></canvas>
+                    <div class="canvasShadow twoCanvasWrapper">
+                        <canvas id="databaseImageCanvasImageContent" class="canvasBottom" width="280"
+                                height="280"></canvas>
+                        <canvas id="databaseImageCanvasUiOverlay" class="canvasTop" width="280" height="280"></canvas>
+                    </div>
                     <label class="triangleCountOutput" id="number_of_matching_triangles_output"></label>
                 </div>
                 <div id="output">
                     <div class="smallCanvasWrapper">
                         <div class="fragmentCanvasWrapper">
-                            <canvas id="fragmentCanvas1" height="160" width="160"></canvas>
+                            <canvas class="canvasShadow" id="fragmentCanvas1" height="160" width="160"></canvas>
                         </div>
                         <div class="distanceOutput">
                             <label class="distanceOutputTitle">Perceptual hash distance:</label>
                             <label id="pHashDistanceOutputWrapper" class="distanceOutputData"> 0 </label>
                         </div>
                         <div class="fragmentCanvasWrapper">
-                            <canvas id="fragmentCanvas2" height="160" width="160"></canvas>
+                            <canvas class="canvasShadow" id="fragmentCanvas2" height="160" width="160"></canvas>
                         </div>
                     </div>
 
@@ -314,15 +359,19 @@
             </div>
         </div>
     </div>
-    <div class="aboutArea">
-    <h1>About</h1>
-    <p>Stuff here....</p>
-        <div class="fishImage">
-            <img src="images/fish_1.jpg"/>
-            <img src="images/fish_2.jpg"/>
-
+    <div class="moreWrapper">
+        <div class="more">
+            <button class="moreButton">I</button>
         </div>
-        <img src="images/volley_ball.jpg"/>
+    </div>
+    <div class="aboutAreaWrapper">
+        <div class="aboutArea">
+            <h2>About</h2>
+            <p>It’s a technique for building a computer program that learns from data. It is based very loosely on how we think the human brain works. First, a collection of software “neurons” are created and connected together, allowing them to send messages to each other. Next, the network is asked to solve a problem, which it attempts to do over and over, each time strengthening the connections that lead to success and diminishing those that lead to failure. For a more detailed introduction to neural networks, Michael Nielsen’s Neural Networks and Deep Learning is a good place to start. For a more technical overview, try Deep Learning by Ian Goodfellow, Yoshua Bengio, and Aaron Courville.<p>
+            <div class="fishImage">
+            </div>
+            <img src="images/volley_ball.jpg"/>
+        </div>
     </div>
 </div>
 <svg id="lineSvgTag" style="display: inline;position: absolute; min-height: 4px;min-width: 4px;">
