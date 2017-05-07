@@ -24,9 +24,9 @@ const g_targetTriangleScale = {
     y: 0
 };
 const INTERACTIVE_CANVAS_ID = "queryImageCanvasImageContent";
-const INTERACTIVE_CANVAS_OVERLAY_ID = "queryImageCanvasImageContent";
+const INTERACTIVE_CANVAS_OVERLAY_ID = "queryImageCanvasUiOverlay";
 const REFERENCE_CANVAS_ID = "databaseImageCanvasImageContent";
-const REFERENCE_CANVAS_OVERLAY_ID = "databaseImageCanvasImageContent";
+const REFERENCE_CANVAS_OVERLAY_ID = "databaseImageCanvasUiOverlay";
 
 var g_numberOfKeypoints = 30;
 const g_minCroppingPolygonArea = 600;
@@ -136,7 +136,7 @@ function getCroppingPointsTransformationMatrix() {
 }
 
 function wipeTransformationChanges() {
-    g_transformationChanges = getIdentityTransformations();
+    g_globalState.transformationChanges = getIdentityTransformations();
 }
 
 function getTransformationChanges() {
@@ -169,10 +169,10 @@ function getCurrentActiveTransformationMatrix() {
 }
 
 function applyTransformationToCurrentActiveTransformationMatrix(result) {
-    if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-        g_interactiveImageTransformation = matrixMultiply(result, g_interactiveImageTransformation);
+    if (g_globalState.currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
+        g_globalState.interactiveImageTransformation = matrixMultiply(result, g_globalState.interactiveImageTransformation);
     } else {
-        g_referenceImageTransformation = matrixMultiply(result, g_referenceImageTransformation);
+        g_globalState.referenceImageTransformation = matrixMultiply(result, g_globalState.referenceImageTransformation);
     }
 }
 
@@ -548,7 +548,6 @@ function convertKeypointsToMatrixKeypoints(keypoints) {
 function convertTransformationObjectToTransformationMatrix(transformations) {
     var transformationCenterPoint = transformations.transformationCenterPoint;
     var ret = getIdentityMatrix();
-
 
     //Translate
     ret = matrixMultiply(ret, getTranslateMatrix(-transformations.translate.x, -transformations.translate.y));
@@ -1182,8 +1181,9 @@ function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas
 
 }
 
-function drawImageWithAppliedTransformations(canvasContext) {
+function drawImageWithAppliedTransformations(canvasState) {
 
+    const canvasContext = canvasState.canvas.getContext('2d');
     paintCanvasWhite(canvasContext);
 
     // var referenceImageTransformations = getReferenceImageTransformations();
@@ -1230,13 +1230,9 @@ function generateOutputList() {
 
 function draw() {
 
-    const referenceCanvas = g_globalState.referenceCanvasState.canvas;
-    const referenceCanvasContext = referenceCanvas.getContext('2d');
-    drawImageWithAppliedTransformations(referenceCanvasContext);
+    drawImageWithAppliedTransformations(g_globalState.referenceCanvasState);
 
-    const interactiveCanvas = g_globalState.interactiveCanvasState.canvas;
-    const interactiveCanvasContext = interactiveCanvas.getContext('2d');
-    drawImageWithAppliedTransformations(interactiveCanvasContext);
+    drawImageWithAppliedTransformations(g_globalState.interactiveCanvasState);
 
     // var referenceTransformedCroppingPoints1 = getTransformedCroppingPointsMatrix(g_referenceCanvasCroppingPolygonPoints, g_referenceCanvasCroppingPolygonInverseMatrix);
     // var referenceTransformedCroppingPoints2 = getTransformedCroppingPointsMatrix(referenceTransformedCroppingPoints1, referenceImageTransformations);
@@ -1285,46 +1281,46 @@ $(document).mouseup(function (e) {
     }
 });
 
-$("#interactiveCanvas").mousedown(function (e) {
-    g_currentActiveCanvasId = INTERACTIVE_CANVAS_ID;
+$("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
+    g_globalState.currentActiveCanvasId = INTERACTIVE_CANVAS_ID;
 
     e.preventDefault();
-    g_isMouseDownAndClickedOnCanvas = true;
+    g_globalState.isMouseDownAndClickedOnCanvas = true;
     handleMouseDownOnCanvas(e);
 });
 
-$("#interactiveCanvas").mousemove(function (e) {
-    if (g_currentActiveCanvasId != INTERACTIVE_CANVAS_ID) {
+$("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
+    if (g_globalState.currentActiveCanvasId != INTERACTIVE_CANVAS_ID) {
         return;
     }
 
-    if (g_isMouseDownAndClickedOnCanvas) {
+    if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
     }
 });
 
-$("#interactiveCanvas").mouseup(function (e) {
+$("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mouseup(function (e) {
     //ignore
 });
 
-$("#referenceCanvas").mousedown(function (e) {
+$("#" + REFERENCE_CANVAS_OVERLAY_ID).mousedown(function (e) {
     g_currentActiveCanvasId = REFERENCE_CANVAS_ID;
 
     e.preventDefault();
-    g_isMouseDownAndClickedOnCanvas = true;
+    g_globalState.isMouseDownAndClickedOnCanvas = true;
     handleMouseDownOnCanvas(e);
 });
 
-$("#referenceCanvas").mousemove(function (e) {
-    if (g_currentActiveCanvasId != REFERENCE_CANVAS_ID) {
+$("#" + REFERENCE_CANVAS_OVERLAY_ID).mousemove(function (e) {
+    if (g_globalState.currentActiveCanvasId != REFERENCE_CANVAS_ID) {
         return;
     }
-    if (g_isMouseDownAndClickedOnCanvas) {
+    if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
     }
 });
 
-$("#referenceCanvas").mouseup(function (e) {
+$("#" + REFERENCE_CANVAS_OVERLAY_ID).mouseup(function (e) {
     //ignore
 });
 
@@ -1352,8 +1348,8 @@ function getCurrentCanvasMousePosition(e) {
 
 }
 
-function handleMouseUpTranslate(pageMousePosition) {
-    var result = convertTransformationObjectToTransformationMatrix(g_transformationChanges);
+function handleMouseUpTranslate(globalState) {
+    var result = convertTransformationObjectToTransformationMatrix(globalState.transformationChanges);
     applyTransformationToCurrentActiveTransformationMatrix(result);
 }
 
@@ -1392,19 +1388,19 @@ function handleMouseUpCrop(mousePosition) {
 function handleMouseUp(e) {
     var pageMousePosition = getCurrentPageMousePosition(e);
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
-
-    switch (g_currentTranformationOperationState) {
+    var globalState = g_globalState;
+    switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
-            handleMouseUpTranslate(pageMousePosition);
+            handleMouseUpTranslate(globalState);
             break;
         case enum_TransformationOperation.NON_UNIFORM_SCALE:
-            handleMouseUpNonUniformScale();
+            handleMouseUpNonUniformScale(globalState);
             break;
         case enum_TransformationOperation.UNIFORM_SCALE:
-            handleMouseUpUniformScale();
+            handleMouseUpUniformScale(globalState);
             break;
         case enum_TransformationOperation.ROTATE:
-            handleMouseUpRotate();
+            handleMouseUpRotate(globalState);
             break;
         case enum_TransformationOperation.CROP:
             handleMouseUpCrop(canvasMousePosition);
@@ -1482,19 +1478,19 @@ function handleMouseMoveCrop(mousePosition, globalState) {
 
 function handleMouseMoveOnDocument(e) {
     var pageMousePosition = getCurrentPageMousePosition(e);
-
-    switch (g_globalState.currentTranformationOperationState) {
+    var globalState = g_globalState;
+    switch (globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
-            handleMouseMoveTranslate(pageMousePosition, getInteractiveImageTransformations());
+            handleMouseMoveTranslate(globalState.pageMouseDownPosition, pageMousePosition, globalState);
             break;
         case enum_TransformationOperation.NON_UNIFORM_SCALE:
-            handleMouseMoveNonUniformScale(pageMousePosition);
+            handleMouseMoveNonUniformScale(globalState.pageMouseDownPosition, pageMousePosition, globalState);
             break;
         case enum_TransformationOperation.UNIFORM_SCALE:
-            handleMouseMoveUniformScale(pageMousePosition);
+            handleMouseMoveUniformScale(globalState.pageMouseDownPosition, pageMousePosition, globalState);
             break;
         case enum_TransformationOperation.ROTATE:
-            handleMouseMoveRotate(pageMousePosition);
+            handleMouseMoveRotate(globalState.pageMouseDownPosition, pageMousePosition, globalState);
             break;
         case enum_TransformationOperation.CROP:
             //ignore, handled in canvas on mouse move function
@@ -1508,7 +1504,7 @@ function handleMouseMoveOnDocument(e) {
 function handleMouseMoveOnCanvas(e) {
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
 
-    switch (g_currentTranformationOperationState) {
+    switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
             //ignore
             break;
@@ -1559,9 +1555,9 @@ function handleMouseDownCrop(mousePosition) {
 function handleMouseDownOnCanvas(e) {
     var pageMousePosition = getCurrentPageMousePosition(e);
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
-    g_pageMouseDownPosition = pageMousePosition;
-    g_transformationChanges.transformationCenterPoint = canvasMousePosition;
-    switch (g_currentTranformationOperationState) {
+    g_globalState.pageMouseDownPosition = pageMousePosition;
+    g_globalState.transformationChanges.transformationCenterPoint = canvasMousePosition;
+    switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
             handleMouseDownTranslate(pageMousePosition);
             break;
@@ -1626,6 +1622,13 @@ function buildGlobalState() {
     interactiveCanvasState.layers = [];
     interactiveCanvasState.layers.push(newLayer(g_sharedBackgroundImage));
     newGlobalState.interactiveCanvasState = interactiveCanvasState;
+
+    newGlobalState.currentTranformationOperationState = enum_TransformationOperation.TRANSLATE;
+
+    newGlobalState.referenceImageTransformation = getIdentityMatrix();
+    newGlobalState.interactiveImageTransformation = getIdentityMatrix();
+
+    newGlobalState.transformationChanges = getIdentityTransformations();
 
     return newGlobalState;
 }
