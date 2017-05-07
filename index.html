@@ -105,13 +105,14 @@
 
         .buttonsWrapper {
             width: 100%;
+            min-width: 1200px;
             border-bottom: 1px solid #ddd;
             box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
 
         .buttonsInner {
             margin: 8px auto 0px auto;
-            padding: 0px 30px;
+            padding: 2px 30px;
             width: 1200px;
         }
 
@@ -136,6 +137,8 @@
             border-top: 1px solid rgba(0, 0, 0, 0.08);
             box-shadow: 0 0px 4px rgba(0, 0, 0, 0.1);
             margin: auto;
+            width: 100%;
+            min-width: 1200px;
         }
         .aboutArea {
             font-family: "Roboto", "Helvetica", "Arial", sans-serif;
@@ -235,6 +238,8 @@
         }
         .moreWrapper {
             position: relative;
+            width: 100%;
+            min-width: 1200px;
         }
         .more {
             position: absolute;
@@ -287,6 +292,9 @@
             <!--<button class="btn btn-default" onclick="toggleDrawKeypointsMode()" >Toggle DrawKeypoints</button>-->
             <!--<button class="btn btn-default" style="float:right;" onclick="callSearch()">CompareImages</button>-->
             <span style="float: right" data-toggle="buttons">
+                <label class="btn btn-secondary" onclick="toggleDrawUIOverlayMode()">
+                    <input type="checkbox" name="options2" autocomplete="off">Reset</input>
+                </label>
                 <label class="btn btn-secondary" onclick="toggleDrawUIOverlayMode()">
                     <input type="checkbox" name="options2" autocomplete="off">Hide UI Overlay</input>
                 </label>

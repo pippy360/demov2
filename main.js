@@ -25,8 +25,8 @@ const g_targetTriangleScale = {
 };
 const INTERACTIVE_CANVAS_ID = "queryImageCanvasImageContent";
 const INTERACTIVE_CANVAS_OVERLAY_ID = "queryImageCanvasImageContent";
-const REFERENCE_CANVAS_ID = "queryImageCanvasImageContent";
-const REFERENCE_CANVAS_OVERLAY_ID = "queryImageCanvasImageContent";
+const REFERENCE_CANVAS_ID = "databaseImageCanvasImageContent";
+const REFERENCE_CANVAS_OVERLAY_ID = "databaseImageCanvasImageContent";
 
 var g_numberOfKeypoints = 30;
 const g_minCroppingPolygonArea = 600;
@@ -1131,8 +1131,8 @@ function getTableEntry(triangleString, key, area) {
 
 function paintCanvasWhite(canvasContext) {
     const canvas = canvasContext.canvas;
-    interactiveCanvasContext.fillStyle = "#FFFFFF";
-    interactiveCanvasContext.fillRect(0, 0, canvas.width, canvas.height); // clear canvas
+    canvasContext.fillStyle = "#FFFFFF";
+    canvasContext.fillRect(0, 0, canvas.width, canvas.height); // clear canvas
 }
 
 function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas) {
@@ -1182,30 +1182,28 @@ function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas
 
 }
 
-function drawImageWithAppliedTransformations() {
+function drawImageWithAppliedTransformations(canvasContext) {
 
-    const interactiveCanvas = getInteractiveCanvas();
-    const interactiveCanvasContext = interactiveCanvas.getContext('2d');
-    paintCanvasWhite(interactiveCanvasContext);
+    paintCanvasWhite(canvasContext);
 
-    var referenceImageTransformations = getReferenceImageTransformations();
-    if (g_isMouseDownAndClickedOnCanvas || g_forceApplyTransformations) {
-        const transformationChangesMatrix = convertTransformationObjectToTransformationMatrix(transformationChanges);
-        if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-            interactiveImageTransformations = matrixMultiply(transformationChangesMatrix, interactiveImageTransformations);
-        } else {
-            referenceImageTransformations = matrixMultiply(transformationChangesMatrix, referenceImageTransformations);
-        }
-    }
-
-    var showFillEffect = g_isMouseDownAndClickedOnCanvas
-    showFillEffect = showFillEffect && g_currentTranformationOperationState == enum_TransformationOperation.CROP;
-    showFillEffect = showFillEffect && isActiveCanvas;
-
-    showFillEffect = isActive;
-    drawClosingPolygon(referenceCanvasContext, referenceTransformedCroppingPoints2, showFillEffect);
-
-    drawBackgroudImageWithTransformationMatrix(interactiveCanvasContext, getBackgroundImage(), interactiveImageTransformations);
+    // var referenceImageTransformations = getReferenceImageTransformations();
+    // if (g_isMouseDownAndClickedOnCanvas || g_forceApplyTransformations) {
+    //     const transformationChangesMatrix = convertTransformationObjectToTransformationMatrix(transformationChanges);
+    //     if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
+    //         interactiveImageTransformations = matrixMultiply(transformationChangesMatrix, interactiveImageTransformations);
+    //     } else {
+    //         referenceImageTransformations = matrixMultiply(transformationChangesMatrix, referenceImageTransformations);
+    //     }
+    // }
+    //
+    // var showFillEffect = g_isMouseDownAndClickedOnCanvas
+    // showFillEffect = showFillEffect && g_currentTranformationOperationState == enum_TransformationOperation.CROP;
+    // showFillEffect = showFillEffect && isActiveCanvas;
+    //
+    // showFillEffect = isActive;
+    // drawClosingPolygon(referenceCanvasContext, referenceTransformedCroppingPoints2, showFillEffect);
+    //
+    drawBackgroudImageWithTransformationMatrix(canvasContext, g_sharedBackgroundImage, getIdentityMatrix());
 }
 
 function generateOutputList() {
@@ -1232,26 +1230,30 @@ function generateOutputList() {
 
 function draw() {
 
-    const referenceCanvas = getReferenceCanvas();
+    const referenceCanvas = g_globalState.referenceCanvasState.canvas;
     const referenceCanvasContext = referenceCanvas.getContext('2d');
-    paintCanvasWhite(referenceCanvasContext);
+    drawImageWithAppliedTransformations(referenceCanvasContext);
 
-    var referenceTransformedCroppingPoints1 = getTransformedCroppingPointsMatrix(g_referenceCanvasCroppingPolygonPoints, g_referenceCanvasCroppingPolygonInverseMatrix);
-    var referenceTransformedCroppingPoints2 = getTransformedCroppingPointsMatrix(referenceTransformedCroppingPoints1, referenceImageTransformations);
+    const interactiveCanvas = g_globalState.interactiveCanvasState.canvas;
+    const interactiveCanvasContext = interactiveCanvas.getContext('2d');
+    drawImageWithAppliedTransformations(interactiveCanvasContext);
 
-    const transformationChanges = getTransformationChanges();
-
-    var interactiveImageTransformations = getInteractiveImageTransformations();
-
-    drawClosingPolygon(interactiveCanvasContext, interactiveTransformedCroppingPoints2, showFillEffect);
-
-    if (g_shouldDrawUIOverlay) {
-        drawCanvasUiOverlay();
-    }
-
-    generateOutputList()
-
-    //window.requestAnimationFrame(draw);
+    // var referenceTransformedCroppingPoints1 = getTransformedCroppingPointsMatrix(g_referenceCanvasCroppingPolygonPoints, g_referenceCanvasCroppingPolygonInverseMatrix);
+    // var referenceTransformedCroppingPoints2 = getTransformedCroppingPointsMatrix(referenceTransformedCroppingPoints1, referenceImageTransformations);
+    //
+    // const transformationChanges = getTransformationChanges();
+    //
+    // var interactiveImageTransformations = getInteractiveImageTransformations();
+    //
+    // drawClosingPolygon(interactiveCanvasContext, interactiveTransformedCroppingPoints2, showFillEffect);
+    //
+    // if (g_shouldDrawUIOverlay) {
+    //     drawCanvasUiOverlay();
+    // }
+    //
+    // generateOutputList()
+    //
+    // //window.requestAnimationFrame(draw);
 }
 
 // #     #                         ###
@@ -1261,23 +1263,24 @@ function draw() {
 // #     #      # #      #####      #  #  # # #####  #    #   #
 // #     # #    # #      #   #      #  #   ## #      #    #   #
 //  #####   ####  ###### #    #    ### #    # #       ####    #
+//user input
 
 $(document).mousedown(function (e) {
     //ignore
 });
 
 $(document).mousemove(function (e) {
-    if (g_isMouseDownAndClickedOnCanvas) {
-        g_referenceImageHighlightedTriangle = null;
+    if (g_globalState.isMouseDownAndClickedOnCanvas) {
+        g_globalState.referenceImageHighlightedTriangle = null;
         handleMouseMoveOnDocument(e);
         draw();
     }
 });
 
 $(document).mouseup(function (e) {
-    if (g_isMouseDownAndClickedOnCanvas) {
+    if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseUp(e);
-        g_isMouseDownAndClickedOnCanvas = false;
+        g_globalState.isMouseDownAndClickedOnCanvas = false;
         draw();
     }
 });
@@ -1415,13 +1418,13 @@ function handleMouseUp(e) {
 }
 
 
-function handleMouseMoveTranslate(pageMousePosition) {
-    var translateDelta = minusTwoPoints(g_pageMouseDownPosition, pageMousePosition);
-    g_transformationChanges.translate = translateDelta;
+function handleMouseMoveTranslate(pageMouseDownPosition, pageMousePosition, globalState) {
+    var translateDelta = minusTwoPoints(pageMouseDownPosition, pageMousePosition);
+    globalState.transformationChanges.translate = translateDelta;
 }
 
-function handleMouseMoveNonUniformScale(pageMousePosition) {
-    var mouseDownPoint = g_pageMouseDownPosition;
+function handleMouseMoveNonUniformScale(pageMouseDownPosition, pageMousePosition, globalState) {
+    var mouseDownPoint = pageMouseDownPosition;
     var y = (pageMousePosition.y - mouseDownPoint.y);
     var x = (pageMousePosition.x - mouseDownPoint.x);
 
@@ -1434,30 +1437,30 @@ function handleMouseMoveNonUniformScale(pageMousePosition) {
     scale += 50;//skip all the fractions, 1 is the minimum scale
     scale /= 50;
     scaleMatrix = getDirectionalScaleMatrix(Math.sqrt(scale), 1 / Math.sqrt(scale), -direction);
-    g_transformationChanges.directionalScaleMatrix = scaleMatrix;
+    globalState.transformationChanges.directionalScaleMatrix = scaleMatrix;
 }
 
-function handleMouseMoveUniformScale(pageMousePosition) {
-    var mouseDownPoint = g_pageMouseDownPosition;
+function handleMouseMoveUniformScale(pageMouseDownPosition, pageMousePosition, globalState) {
+    var mouseDownPoint = pageMouseDownPosition;
     var y = (pageMousePosition.y - mouseDownPoint.y);
-    var x = (pageMousePosition.x - mouseDownPoint.x);
+    // var x = (pageMousePosition.x - mouseDownPoint.x);
 
     scale = y;//(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)));
 
     if (y > 0) {
-        scale = 100 + y;
+        scale += 100;
         scale = 1 / (scale / 100);
     } else {
-        scale = y * -1;//make y positive
+        scale *= -1;//make y positive
         scale += 100;
         scale /= 100;
     }
 
-    g_transformationChanges.uniformScale = scale;
+    globalState.transformationChanges.uniformScale = scale;
 }
 
-function handleMouseMoveRotate(pageMousePosition) {
-    var mouseDownPoint = g_pageMouseDownPosition;
+function handleMouseMoveRotate(pageMouseDownPosition, pageMousePosition, globalState) {
+    var mouseDownPoint = pageMouseDownPosition;
     var y = (pageMousePosition.y - mouseDownPoint.y);
     var x = (pageMousePosition.x - mouseDownPoint.x);
 
@@ -1466,11 +1469,11 @@ function handleMouseMoveRotate(pageMousePosition) {
         extraRotation = (360 + (extraRotation));
     }
     extraRotation = extraRotation % 360;
-    g_transformationChanges.rotation = extraRotation;
+    globalState.transformationChanges.rotation = extraRotation;
 }
 
-function handleMouseMoveCrop(mousePosition) {
-    if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
+function handleMouseMoveCrop(mousePosition, globalState) {
+    if (globalState.currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
         g_interactiveCanvasCroppingPolygonPoints.push(mousePosition);
     } else {
         g_referenceCanvasCroppingPolygonPoints.push(mousePosition);
@@ -1480,7 +1483,7 @@ function handleMouseMoveCrop(mousePosition) {
 function handleMouseMoveOnDocument(e) {
     var pageMousePosition = getCurrentPageMousePosition(e);
 
-    switch (g_currentTranformationOperationState) {
+    switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
             handleMouseMoveTranslate(pageMousePosition, getInteractiveImageTransformations());
             break;
@@ -1591,7 +1594,7 @@ function applyTransformationEffects(state) {
 }
 
 function setCurrnetOperation(newState) {
-    g_currentTranformationOperationState = newState;
+    g_globalState.currentTranformationOperationState = newState;
     applyTransformationEffects(newState);
 }
 
@@ -1601,25 +1604,41 @@ function changeNumberOfKeypoints(newNumberOfKeypoints) {
     draw();
 }
 
-function buildGlobalState(){
-    var newGlobalState = newGlobalState();
-    refCanvasState = newCanvasState();
-    refCanvasState.uiLayerId = "queryImageCanvasUiOverlay";
-    refCanvasState.imageLayerId = "queryImageCanvasImageContent";
-    //add a layer of the dog
-    newGlobalState.referenceCanvasState = newCanvasState();
-    // newGlobalState.sharedBackgroundImage.src =
+function newLayer(layerImage) {
+    return layerImage;
+}
+
+function buildGlobalState() {
+    var newGlobalState = {};//newGlobalState();//TODO: FIXME:
+
+    var refCanvasState = newCanvasState();
+    refCanvasState.uiLayerId = REFERENCE_CANVAS_ID;
+    refCanvasState.imageLayerId = REFERENCE_CANVAS_OVERLAY_ID;
+    refCanvasState.canvas = document.getElementById(REFERENCE_CANVAS_ID);
+    refCanvasState.layers = [];
+    refCanvasState.layers.push(newLayer(g_sharedBackgroundImage));
+    newGlobalState.referenceCanvasState = refCanvasState;
+
+    var interactiveCanvasState = newCanvasState();
+    interactiveCanvasState.uiLayerId = INTERACTIVE_CANVAS_ID;
+    interactiveCanvasState.imageLayerId = INTERACTIVE_CANVAS_OVERLAY_ID;
+    interactiveCanvasState.canvas = document.getElementById(INTERACTIVE_CANVAS_ID);
+    interactiveCanvasState.layers = [];
+    interactiveCanvasState.layers.push(newLayer(g_sharedBackgroundImage));
+    newGlobalState.interactiveCanvasState = interactiveCanvasState;
+
+    return newGlobalState;
 }
 
 function init() {
-    g_globalState.referenceCanvasState =
+
     // g_keypoints = generateRandomKeypoints({x: g_canvasImage.width, y: g_canvasImage.height}, g_numberOfKeypoints);
-    // g_globalState = buildGlobalState();
+    g_globalState = buildGlobalState();
     // wipeTransformationChanges();
     // g_interactiveImageTransformation = getIdentityMatrix();
     // g_referenceImageTransformation = getIdentityMatrix();
     // setCurrnetOperation(enum_TransformationOperation.TRANSLATE);
-    // draw();
+    draw();
     //window.requestAnimationFrame(draw);
 }
 
@@ -1661,3 +1680,6 @@ function animate() {
 }
 
 loadImageAndInit('images/dog1_resize3.jpg');
+
+
+
