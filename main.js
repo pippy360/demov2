@@ -12,8 +12,8 @@ var g_drawingOptions = {
     drawUiOverlay: true,
     drawKeypoints: false,
     drawTriangles: true,
-    var g_forceApplyTransformations = false;
-}
+    forceApplyTransformations: false,
+};
 
 //
 // consts
@@ -22,13 +22,16 @@ var g_drawingOptions = {
 const g_targetTriangleScale = {
     x: 0,
     y: 0
-}
-const INTERACTIVE_CANVAS_ID = "interactiveCanvas";
-const REFERENCE_CANVAS_ID = "referenceCanvas";
+};
+const INTERACTIVE_CANVAS_ID = "queryImageCanvasImageContent";
+const INTERACTIVE_CANVAS_OVERLAY_ID = "queryImageCanvasImageContent";
+const REFERENCE_CANVAS_ID = "queryImageCanvasImageContent";
+const REFERENCE_CANVAS_OVERLAY_ID = "queryImageCanvasImageContent";
+
 var g_numberOfKeypoints = 30;
 const g_minCroppingPolygonArea = 600;
 
-function newStep(minPntDist, maxPntDist, minTriArea, colour){
+function newStep(minPntDist, maxPntDist, minTriArea, colour) {
     return {
         minPntDist: minPntDist,
         maxPntDist: maxPntDist,
@@ -38,11 +41,11 @@ function newStep(minPntDist, maxPntDist, minTriArea, colour){
 }
 
 const g_steps = [
-    newStep(85,90,30,[255, 255, 255]),
-    newStep(90,100,30,[0, 0, 255]),
-    newStep(100,150,30,[255, 0, 0]),
-    newStep(150,200,30,[100, 250, 250]),
-    newStep(50,450,30,[100, 255, 100])
+    newStep(85, 90, 30, [255, 255, 255]),
+    newStep(90, 100, 30, [0, 0, 255]),
+    newStep(100, 150, 30, [255, 0, 0]),
+    newStep(150, 200, 30, [100, 250, 250]),
+    newStep(50, 450, 30, [100, 255, 100])
 ];
 
 //
@@ -60,27 +63,36 @@ var g_layerState = {
 
 };
 
-var g_canvasState = {
-    layers: [],
-
-};
-
-var globalState = {
-    g_currentActiveCanvasId: INTERACTIVE_CANVAS_ID,
-    triangleMapByReferenceTriangleIndex: new Map(),
-    referenceImageHighlightedTriangle: null,
-    interactiveImageHighlightedTriangle: null,
-    g_isMouseDownAndClickedOnCanvas: false,
-    canvasCroppingPolygonPoints: [],
-    //the inverse of the transformations applied at the time of drawing
-    canvasCroppingPolygonInverseMatrix: getIdentityMatrix(),
-    currentTranformationOperationState: null,
-    temporaryAppliedTransformations: [],
-    pageMouseDownPosition: {
-        x: 0,
-        y: 0
-    }
-};
+var g_canvasState = null;
+function newCanvasState() {
+    return {
+        uiLayerId: "",
+        layers: [],
+    };
+}
+var g_sharedBackgroundImage = null;
+var g_globalState = null;
+function newGlobalState() {
+    return {
+        referenceCanvasState: null,//newCanvasState(),
+        interactiveCanvasState: null,//newCanvasState(),
+        sharedBackgroundImage: new image(),
+        currentActiveCanvasId: INTERACTIVE_CANVAS_ID,
+        triangleMapByReferenceTriangleIndex: new Map(),
+        referenceImageHighlightedTriangle: null,
+        interactiveImageHighlightedTriangle: null,
+        isMouseDownAndClickedOnCanvas: false,
+        canvasCroppingPolygonPoints: [],
+        //the inverse of the transformations applied at the time of drawing
+        canvasCroppingPolygonInverseMatrix: getIdentityMatrix(),
+        currentTranformationOperationState: null,
+        temporaryAppliedTransformations: [],
+        pageMouseDownPosition: {
+            x: 0,
+            y: 0
+        }
+    };
+}
 
 var enum_TransformationOperation = {
     TRANSLATE: 1,
@@ -89,7 +101,6 @@ var enum_TransformationOperation = {
     ROTATE: 4,
     CROP: 5
 };
-df
 
 //
 // getters
@@ -1058,7 +1069,7 @@ function getAllTrianglesFromIndexTriangleObjects(trianglesAndIndex) {
 function containsMatchingPoint(tri, currPt) {
     for (var i = 0; i < tri.length; i++) {
         var comparePt = tri[i];
-        if(comparePt.x == currPt.x && comparePt.y == currPt.y){
+        if (comparePt.x == currPt.x && comparePt.y == currPt.y) {
             return true;
         }
     }
@@ -1068,7 +1079,7 @@ function containsMatchingPoint(tri, currPt) {
 function compareTriangles(tri1, tri2) {
     for (var i = 0; i < tri1.length; i++) {
         var currPt = tri1[i];
-        if (containsMatchingPoint(tri2, currPt)){
+        if (containsMatchingPoint(tri2, currPt)) {
 
         } else {
             //if any of the points don't match it's not a matching triangle
@@ -1111,9 +1122,9 @@ function getTableEntry(triangleString, key, area) {
     //FIXME:
     var outputStrClass = "triangleTRAll " + "triangleTR " + triangleString;
     var outputStr =
-        "<tr class=\""+outputStrClass+"\" onmouseover=\"highlightTriangle(" + triangleString + ")\">" +
-            "<td>" + key.value + "</td>" +
-            "<td>" + Math.round(area) + " </td>" +
+        "<tr class=\"" + outputStrClass + "\" onmouseover=\"highlightTriangle(" + triangleString + ")\">" +
+        "<td>" + key.value + "</td>" +
+        "<td>" + Math.round(area) + " </td>" +
         "</tr>";
     return outputStr;
 }
@@ -1177,7 +1188,7 @@ function drawImageWithAppliedTransformations() {
     const interactiveCanvasContext = interactiveCanvas.getContext('2d');
     paintCanvasWhite(interactiveCanvasContext);
 
-    var referenceImageTransformations = getReferenceImageTransformations();    
+    var referenceImageTransformations = getReferenceImageTransformations();
     if (g_isMouseDownAndClickedOnCanvas || g_forceApplyTransformations) {
         const transformationChangesMatrix = convertTransformationObjectToTransformationMatrix(transformationChanges);
         if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
@@ -1188,8 +1199,8 @@ function drawImageWithAppliedTransformations() {
     }
 
     var showFillEffect = g_isMouseDownAndClickedOnCanvas
-        showFillEffect = showFillEffect && g_currentTranformationOperationState == enum_TransformationOperation.CROP;
-        showFillEffect = showFillEffect && isActiveCanvas;
+    showFillEffect = showFillEffect && g_currentTranformationOperationState == enum_TransformationOperation.CROP;
+    showFillEffect = showFillEffect && isActiveCanvas;
 
     showFillEffect = isActive;
     drawClosingPolygon(referenceCanvasContext, referenceTransformedCroppingPoints2, showFillEffect);
@@ -1223,13 +1234,13 @@ function draw() {
 
     const referenceCanvas = getReferenceCanvas();
     const referenceCanvasContext = referenceCanvas.getContext('2d');
-    paintCanvasWhite(referenceCanvasContext);    
+    paintCanvasWhite(referenceCanvasContext);
 
     var referenceTransformedCroppingPoints1 = getTransformedCroppingPointsMatrix(g_referenceCanvasCroppingPolygonPoints, g_referenceCanvasCroppingPolygonInverseMatrix);
     var referenceTransformedCroppingPoints2 = getTransformedCroppingPointsMatrix(referenceTransformedCroppingPoints1, referenceImageTransformations);
 
     const transformationChanges = getTransformationChanges();
-    
+
     var interactiveImageTransformations = getInteractiveImageTransformations();
 
     drawClosingPolygon(interactiveCanvasContext, interactiveTransformedCroppingPoints2, showFillEffect);
@@ -1590,20 +1601,33 @@ function changeNumberOfKeypoints(newNumberOfKeypoints) {
     draw();
 }
 
+function buildGlobalState(){
+    var newGlobalState = newGlobalState();
+    refCanvasState = newCanvasState();
+    refCanvasState.uiLayerId = "queryImageCanvasUiOverlay";
+    refCanvasState.imageLayerId = "queryImageCanvasImageContent";
+    //add a layer of the dog
+    newGlobalState.referenceCanvasState = newCanvasState();
+    // newGlobalState.sharedBackgroundImage.src =
+}
+
 function init() {
-    g_keypoints = generateRandomKeypoints({x: g_canvasImage.width, y: g_canvasImage.height}, g_numberOfKeypoints);
-    wipeTransformationChanges();
-    g_interactiveImageTransformation = getIdentityMatrix();
-    g_referenceImageTransformation = getIdentityMatrix();
-    setCurrnetOperation(enum_TransformationOperation.TRANSLATE);
-    draw();
+    g_globalState.referenceCanvasState =
+    // g_keypoints = generateRandomKeypoints({x: g_canvasImage.width, y: g_canvasImage.height}, g_numberOfKeypoints);
+    // g_globalState = buildGlobalState();
+    // wipeTransformationChanges();
+    // g_interactiveImageTransformation = getIdentityMatrix();
+    // g_referenceImageTransformation = getIdentityMatrix();
+    // setCurrnetOperation(enum_TransformationOperation.TRANSLATE);
+    // draw();
     //window.requestAnimationFrame(draw);
 }
 
 function loadImageAndInit(imageSrc) {
     //g_canvasImage.src = 'dog1_resize.jpg';
-    g_canvasImage.src = imageSrc;
-    g_canvasImage.onload = function () {
+    g_sharedBackgroundImage = new Image();
+    g_sharedBackgroundImage.src = imageSrc;
+    g_sharedBackgroundImage.onload = function () {
         init();
     };
 }
@@ -1612,9 +1636,9 @@ var start = 0;
 function animateStep(timestamp) {
     if (!start) start = timestamp;
     var progress = timestamp - start;
-    g_transformationChanges.rotation = progress/100%360;
-    g_transformationChanges.uniformScale = progress/100000%360;
-    console.log(progress%360);
+    g_transformationChanges.rotation = progress / 100 % 360;
+    g_transformationChanges.uniformScale = progress / 100000 % 360;
+    console.log(progress % 360);
 
     if (g_transformationChanges.uniformScale < 1) {
         window.requestAnimationFrame(animateStep);
@@ -1629,8 +1653,8 @@ function animateStep(timestamp) {
 
 function animate() {
     g_transformationChanges.transformationCenterPoint = {
-        x: 280/2,
-        y: 280/2
+        x: 280 / 2,
+        y: 280 / 2
     };
 
     window.requestAnimationFrame(animateStep);
