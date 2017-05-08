@@ -151,7 +151,8 @@ function getActiveLayer(globalState) {
 
 function applyTransformationToCurrentActiveTransformationMatrix(globalState, result) {
     var layer = getActiveLayer(globalState);
-    layer.appliedTransformations = matrixMultiply(globalState.temporaryAppliedTransformations, layer.appliedTransformations);
+    var temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations);
+    layer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, layer.appliedTransformations);
 }
 
 function getReferenceImageTransformations() {
