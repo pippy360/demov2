@@ -1549,23 +1549,23 @@ function changeNumberOfKeypoints(newNumberOfKeypoints) {
     draw();
 }
 
-function buildCommonCanvasState(imageCanvasId, overlayCanvasId) {
+function buildCommonCanvasState(imageCanvasId, overlayCanvasId, preloadedImage) {
     var returnedCanvasState = newCanvasState();
     returnedCanvasState.uiLayerId = REFERENCE_CANVAS_ID;
     returnedCanvasState.imageLayerId = REFERENCE_CANVAS_OVERLAY_ID;
     returnedCanvasState.canvas = document.getElementById(REFERENCE_CANVAS_ID);
     returnedCanvasState.layers = [];
-    returnedCanvasState.layers.push(newLayer(g_sharedBackgroundImage));
+    returnedCanvasState.layers.push(newLayer(preloadedImage));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
     return returnedCanvasState;
 }
 
 function buildReferenceCanvasState() {
-    return buildCommonCanvasState(REFERENCE_CANVAS_ID, REFERENCE_CANVAS_OVERLAY_ID);
+    return buildCommonCanvasState(REFERENCE_CANVAS_ID, REFERENCE_CANVAS_OVERLAY_ID, _g_preloadImage);
 }
 
 function buildInteractiveCanvasState() {
-    return buildCommonCanvasState(INTERACTIVE_CANVAS_ID, INTERACTIVE_CANVAS_OVERLAY_ID);
+    return buildCommonCanvasState(INTERACTIVE_CANVAS_ID, INTERACTIVE_CANVAS_OVERLAY_ID, _g_preloadImage);
 }
 
 function buildGlobalState() {
