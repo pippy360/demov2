@@ -56,7 +56,7 @@ function newLayer(layerImage) {
     return {
         canvasCroppingPolygonPoints: null,
         canvasCroppingPolygonInverseMatrix: null,//the inverse of the transformations applied at the time of drawing
-        layerImage: layerImage,
+        image: layerImage,
         appliedTransformations: getIdentityMatrix(),
         visable: true,
         layerColour: [0,0,0], //used for canvas UI overlay elements
