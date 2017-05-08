@@ -52,45 +52,38 @@ const g_steps = [
 // globalState
 //
 
-var g_layerState = {
-    appliedTransformations: [],
-    visable: true,
-    backgroundImageObj: null,
-    layerColour: null, //used for canvas UI overlay elements
-    g_keypoints: [],
-    g_cachedCalculatedReferenceCanvasKeypoints: [],
-    g_cachedCalculatedInteractiveCanvasKeypoints: [],
-
-};
-
-var g_canvasState = null;
-function newCanvasState() {
+function newLayer(layerImage) {
     return {
-        uiLayerId: "",
-        layers: [],
+        canvasCroppingPolygonPoints: null,
+        canvasCroppingPolygonInverseMatrix: null,//the inverse of the transformations applied at the time of drawing
+        layerImage: layerImage,
+        appliedTransformations: getIdentityMatrix(),
+        visable: true,
+        layerColour: [0,0,0], //used for canvas UI overlay elements
+        keypoints: []
     };
 }
-var g_sharedBackgroundImage = null;
+
+function newCanvasState() {
+    return {
+        highlightedTriangle: null,    
+        uiLayerId: "",
+        layers: [],
+        activeLayer: null
+    };
+}
+
+var _g_preloadImage = null;
+
 var g_globalState = null;
 function newGlobalState() {
     return {
-        referenceCanvasState: null,//newCanvasState(),
-        interactiveCanvasState: null,//newCanvasState(),
-        sharedBackgroundImage: new image(),
-        currentActiveCanvasId: INTERACTIVE_CANVAS_ID,
-        triangleMapByReferenceTriangleIndex: new Map(),
-        referenceImageHighlightedTriangle: null,
-        interactiveImageHighlightedTriangle: null,
-        isMouseDownAndClickedOnCanvas: false,
-        canvasCroppingPolygonPoints: [],
-        //the inverse of the transformations applied at the time of drawing
-        canvasCroppingPolygonInverseMatrix: getIdentityMatrix(),
-        currentTranformationOperationState: null,
-        temporaryAppliedTransformations: [],
-        pageMouseDownPosition: {
-            x: 0,
-            y: 0
-        }
+        activeCanvas: null,
+        referenceCanvasState: null,
+        interactiveCanvasState: null,
+        isMouseDownAndClickedOnCanvas: null,
+        temporaryAppliedTransformations: null,
+        pageMouseDownPosition: null,
     };
 }
 
@@ -135,14 +128,6 @@ function getCroppingPointsTransformationMatrix() {
     return g_interactiveCanvasCroppingPolygonInverseMatrix;
 }
 
-function wipeTransformationChanges() {
-    g_globalState.transformationChanges = getIdentityTransformations();
-}
-
-function getTransformationChanges() {
-    return g_transformationChanges;
-}
-
 function getIdentityTransformations() {
     var ret = {
         transformationCenterPoint: {
@@ -160,20 +145,13 @@ function getIdentityTransformations() {
     return ret;
 }
 
-function getCurrentActiveTransformationMatrix() {
-    if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-        return g_interactiveImageTransformation;
-    } else {
-        return g_referenceImageTransformation;
-    }
+function getActiveLayer(globalState) {
+    return globalState.activeCanvas.activeLayer;
 }
 
-function applyTransformationToCurrentActiveTransformationMatrix(result) {
-    if (g_globalState.currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-        g_globalState.interactiveImageTransformation = matrixMultiply(result, g_globalState.interactiveImageTransformation);
-    } else {
-        g_globalState.referenceImageTransformation = matrixMultiply(result, g_globalState.referenceImageTransformation);
-    }
+function applyTransformationToCurrentActiveTransformationMatrix(globalState, result) {
+    var layer = getActiveLayer(globalState);
+    layer.appliedTransformations = matrixMultiply(globalState.temporaryAppliedTransformations, layer.appliedTransformations);
 }
 
 function getReferenceImageTransformations() {
@@ -1181,18 +1159,18 @@ function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas
 
 }
 
-function drawImageWithAppliedTransformations(canvasState) {
+function drawLayerWithAppliedTransformations(canvasState, layer) {
 
     const canvasContext = canvasState.canvas.getContext('2d');
-    paintCanvasWhite(canvasContext);
+    drawBackgroudImageWithTransformationMatrix(canvasContext, layer.image, layer.appliedTransformations);
 
     // var referenceImageTransformations = getReferenceImageTransformations();
     // if (g_isMouseDownAndClickedOnCanvas || g_forceApplyTransformations) {
-    //     const transformationChangesMatrix = convertTransformationObjectToTransformationMatrix(transformationChanges);
+    //     const temporaryAppliedTransformationsMatrix = convertTransformationObjectToTransformationMatrix(temporaryAppliedTransformations);
     //     if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-    //         interactiveImageTransformations = matrixMultiply(transformationChangesMatrix, interactiveImageTransformations);
+    //         interactiveImageTransformations = matrixMultiply(temporaryAppliedTransformationsMatrix, interactiveImageTransformations);
     //     } else {
-    //         referenceImageTransformations = matrixMultiply(transformationChangesMatrix, referenceImageTransformations);
+    //         referenceImageTransformations = matrixMultiply(temporaryAppliedTransformationsMatrix, referenceImageTransformations);
     //     }
     // }
     //
@@ -1203,7 +1181,6 @@ function drawImageWithAppliedTransformations(canvasState) {
     // showFillEffect = isActive;
     // drawClosingPolygon(referenceCanvasContext, referenceTransformedCroppingPoints2, showFillEffect);
     //
-    drawBackgroudImageWithTransformationMatrix(canvasContext, g_sharedBackgroundImage, getIdentityMatrix());
 }
 
 function generateOutputList() {
@@ -1228,16 +1205,30 @@ function generateOutputList() {
     $("#number_of_matching_triangles_output").html("Actual Matches: " + g_triangleMapByReferenceTriangleIndex.size);
 }
 
+function drawLayers(canvasState, layers) {
+    var canvasContext = canvasState.canvas.getContext('2d');
+    paintCanvasWhite(canvasContext);
+    for(var i = 0; i < layers.length; i++) {
+        drawLayerWithAppliedTransformations(canvasState, layers[i]);
+    }
+}
+
 function draw() {
 
-    drawImageWithAppliedTransformations(g_globalState.referenceCanvasState);
+    
+    
+    var layers;
 
-    drawImageWithAppliedTransformations(g_globalState.interactiveCanvasState);
+    layers = g_globalState.interactiveCanvasState.layers;
+    drawLayers(g_globalState.interactiveCanvasState, layers);
+
+    layers = g_globalState.referenceCanvasState.layers;
+    drawLayers(g_globalState.referenceCanvasState, layers);
 
     // var referenceTransformedCroppingPoints1 = getTransformedCroppingPointsMatrix(g_referenceCanvasCroppingPolygonPoints, g_referenceCanvasCroppingPolygonInverseMatrix);
     // var referenceTransformedCroppingPoints2 = getTransformedCroppingPointsMatrix(referenceTransformedCroppingPoints1, referenceImageTransformations);
     //
-    // const transformationChanges = getTransformationChanges();
+    // const temporaryAppliedTransformations = temporaryAppliedTransformations();
     //
     // var interactiveImageTransformations = getInteractiveImageTransformations();
     //
@@ -1282,7 +1273,7 @@ $(document).mouseup(function (e) {
 });
 
 $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
-    g_globalState.currentActiveCanvasId = INTERACTIVE_CANVAS_ID;
+    // g_globalState.currentActiveCanvasId = INTERACTIVE_CANVAS_ID;//FIXME: TODO:
 
     e.preventDefault();
     g_globalState.isMouseDownAndClickedOnCanvas = true;
@@ -1290,9 +1281,9 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 });
 
 $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
-    if (g_globalState.currentActiveCanvasId != INTERACTIVE_CANVAS_ID) {
-        return;
-    }
+    // if (g_globalState.currentActiveCanvasId != INTERACTIVE_CANVAS_ID) {//FIXME: TODO:
+        // return;
+    // }
 
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
@@ -1304,7 +1295,7 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mouseup(function (e) {
 });
 
 $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousedown(function (e) {
-    g_currentActiveCanvasId = REFERENCE_CANVAS_ID;
+    // g_currentActiveCanvasId = REFERENCE_CANVAS_ID;//FIXME: TODO:
 
     e.preventDefault();
     g_globalState.isMouseDownAndClickedOnCanvas = true;
@@ -1348,26 +1339,6 @@ function getCurrentCanvasMousePosition(e) {
 
 }
 
-function handleMouseUpTranslate(globalState) {
-    var result = convertTransformationObjectToTransformationMatrix(globalState.transformationChanges);
-    applyTransformationToCurrentActiveTransformationMatrix(result);
-}
-
-function handleMouseUpNonUniformScale() {
-    var result = convertTransformationObjectToTransformationMatrix(g_transformationChanges);
-    applyTransformationToCurrentActiveTransformationMatrix(result);
-}
-
-function handleMouseUpUniformScale() {
-    var result = convertTransformationObjectToTransformationMatrix(g_transformationChanges);
-    applyTransformationToCurrentActiveTransformationMatrix(result);
-}
-
-function handleMouseUpRotate() {
-    var result = convertTransformationObjectToTransformationMatrix(g_transformationChanges);
-    applyTransformationToCurrentActiveTransformationMatrix(result);
-}
-
 function handleMouseUpCrop(mousePosition) {
     var croppingPolyPoints = [];
     if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
@@ -1390,17 +1361,11 @@ function handleMouseUp(e) {
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
     var globalState = g_globalState;
     switch (g_globalState.currentTranformationOperationState) {
-        case enum_TransformationOperation.TRANSLATE:
-            handleMouseUpTranslate(globalState);
-            break;
-        case enum_TransformationOperation.NON_UNIFORM_SCALE:
-            handleMouseUpNonUniformScale(globalState);
-            break;
-        case enum_TransformationOperation.UNIFORM_SCALE:
-            handleMouseUpUniformScale(globalState);
-            break;
-        case enum_TransformationOperation.ROTATE:
-            handleMouseUpRotate(globalState);
+        case enum_TransformationOperation.TRANSLATE: /*no break*/
+        case enum_TransformationOperation.NON_UNIFORM_SCALE: /*no break*/
+        case enum_TransformationOperation.UNIFORM_SCALE: /*no break*/
+        case enum_TransformationOperation.ROTATE: 
+            applyTransformationToCurrentActiveTransformationMatrix(globalState);
             break;
         case enum_TransformationOperation.CROP:
             handleMouseUpCrop(canvasMousePosition);
@@ -1410,13 +1375,13 @@ function handleMouseUp(e) {
             break;
     }
 
-    wipeTransformationChanges();
+    wipeTemporaryAppliedTransformations();//TODO: FIXME:
 }
 
 
 function handleMouseMoveTranslate(pageMouseDownPosition, pageMousePosition, globalState) {
     var translateDelta = minusTwoPoints(pageMouseDownPosition, pageMousePosition);
-    globalState.transformationChanges.translate = translateDelta;
+    globalState.temporaryAppliedTransformations.translate = translateDelta;
 }
 
 function handleMouseMoveNonUniformScale(pageMouseDownPosition, pageMousePosition, globalState) {
@@ -1433,7 +1398,7 @@ function handleMouseMoveNonUniformScale(pageMouseDownPosition, pageMousePosition
     scale += 50;//skip all the fractions, 1 is the minimum scale
     scale /= 50;
     scaleMatrix = getDirectionalScaleMatrix(Math.sqrt(scale), 1 / Math.sqrt(scale), -direction);
-    globalState.transformationChanges.directionalScaleMatrix = scaleMatrix;
+    globalState.temporaryAppliedTransformations.directionalScaleMatrix = scaleMatrix;
 }
 
 function handleMouseMoveUniformScale(pageMouseDownPosition, pageMousePosition, globalState) {
@@ -1452,7 +1417,7 @@ function handleMouseMoveUniformScale(pageMouseDownPosition, pageMousePosition, g
         scale /= 100;
     }
 
-    globalState.transformationChanges.uniformScale = scale;
+    globalState.temporaryAppliedTransformations.uniformScale = scale;
 }
 
 function handleMouseMoveRotate(pageMouseDownPosition, pageMousePosition, globalState) {
@@ -1465,7 +1430,7 @@ function handleMouseMoveRotate(pageMouseDownPosition, pageMousePosition, globalS
         extraRotation = (360 + (extraRotation));
     }
     extraRotation = extraRotation % 360;
-    globalState.transformationChanges.rotation = extraRotation;
+    globalState.temporaryAppliedTransformations.rotation = extraRotation;
 }
 
 function handleMouseMoveCrop(mousePosition, globalState) {
@@ -1506,16 +1471,16 @@ function handleMouseMoveOnCanvas(e) {
 
     switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
-            //ignore
+            //do nothing
             break;
         case enum_TransformationOperation.NON_UNIFORM_SCALE:
-            //ignore
+            //do nothing
             break;
         case enum_TransformationOperation.UNIFORM_SCALE:
-            //ignore
+            //do nothing
             break;
         case enum_TransformationOperation.ROTATE:
-            //ignore
+            //do nothing
             break;
         case enum_TransformationOperation.CROP:
             handleMouseMoveCrop(canvasMousePosition);
@@ -1524,22 +1489,6 @@ function handleMouseMoveOnCanvas(e) {
             console.log("ERROR: Invalid state.");
             break;
     }
-}
-
-function handleMouseDownTranslate(canvasMousePosition) {
-    //do nothing
-}
-
-function handleMouseDownNonUniformScale(pageMousePosition) {
-    //do nothing
-}
-
-function handleMouseDownUniformScale(pageMousePosition) {
-    //do nothing
-}
-
-function handleMouseDownRotate(pageMousePosition) {
-    //do nothing
 }
 
 function handleMouseDownCrop(mousePosition) {
@@ -1556,19 +1505,19 @@ function handleMouseDownOnCanvas(e) {
     var pageMousePosition = getCurrentPageMousePosition(e);
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
     g_globalState.pageMouseDownPosition = pageMousePosition;
-    g_globalState.transformationChanges.transformationCenterPoint = canvasMousePosition;
+    g_globalState.temporaryAppliedTransformations.transformationCenterPoint = canvasMousePosition;
     switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
-            handleMouseDownTranslate(pageMousePosition);
+            //do nothing
             break;
         case enum_TransformationOperation.NON_UNIFORM_SCALE:
-            handleMouseDownNonUniformScale();
+            //do nothing
             break;
         case enum_TransformationOperation.UNIFORM_SCALE:
-            handleMouseDownUniformScale();
+            //do nothing
             break;
         case enum_TransformationOperation.ROTATE:
-            handleMouseDownRotate(pageMousePosition);
+            //do nothing
             break;
         case enum_TransformationOperation.CROP:
             handleMouseDownCrop(canvasMousePosition);
@@ -1600,69 +1549,65 @@ function changeNumberOfKeypoints(newNumberOfKeypoints) {
     draw();
 }
 
-function newLayer(layerImage) {
-    return layerImage;
+function buildCommonCanvasState(imageCanvasId, overlayCanvasId) {
+    var returnedCanvasState = newCanvasState();
+    returnedCanvasState.uiLayerId = REFERENCE_CANVAS_ID;
+    returnedCanvasState.imageLayerId = REFERENCE_CANVAS_OVERLAY_ID;
+    returnedCanvasState.canvas = document.getElementById(REFERENCE_CANVAS_ID);
+    returnedCanvasState.layers = [];
+    returnedCanvasState.layers.push(newLayer(g_sharedBackgroundImage));
+    returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
+    return returnedCanvasState;
+}
+
+function buildReferenceCanvasState() {
+    return buildCommonCanvasState(REFERENCE_CANVAS_ID, REFERENCE_CANVAS_OVERLAY_ID);
+}
+
+function buildInteractiveCanvasState() {
+    return buildCommonCanvasState(INTERACTIVE_CANVAS_ID, INTERACTIVE_CANVAS_OVERLAY_ID);
 }
 
 function buildGlobalState() {
-    var newGlobalState = {};//newGlobalState();//TODO: FIXME:
+    var resultingGlobalState = newGlobalState();//TODO: FIXME:
 
-    var refCanvasState = newCanvasState();
-    refCanvasState.uiLayerId = REFERENCE_CANVAS_ID;
-    refCanvasState.imageLayerId = REFERENCE_CANVAS_OVERLAY_ID;
-    refCanvasState.canvas = document.getElementById(REFERENCE_CANVAS_ID);
-    refCanvasState.layers = [];
-    refCanvasState.layers.push(newLayer(g_sharedBackgroundImage));
-    newGlobalState.referenceCanvasState = refCanvasState;
+    const referenceCanvasState = buildReferenceCanvasState();
+    const interactiveCanvasState = buildInteractiveCanvasState();
 
-    var interactiveCanvasState = newCanvasState();
-    interactiveCanvasState.uiLayerId = INTERACTIVE_CANVAS_ID;
-    interactiveCanvasState.imageLayerId = INTERACTIVE_CANVAS_OVERLAY_ID;
-    interactiveCanvasState.canvas = document.getElementById(INTERACTIVE_CANVAS_ID);
-    interactiveCanvasState.layers = [];
-    interactiveCanvasState.layers.push(newLayer(g_sharedBackgroundImage));
-    newGlobalState.interactiveCanvasState = interactiveCanvasState;
+    resultingGlobalState.activeCanvas = interactiveCanvasState;
+    resultingGlobalState.referenceCanvasState = referenceCanvasState;
+    resultingGlobalState.interactiveCanvasState = interactiveCanvasState;
+    resultingGlobalState.isMouseDownAndClickedOnCanvas = false;
+    resultingGlobalState.currentTranformationOperationState = enum_TransformationOperation.TRANSLATE;
+    resultingGlobalState.temporaryAppliedTransformations = getIdentityTransformations();
+    resultingGlobalState.pageMouseDownPosition = {x: 0, y: 0};
 
-    newGlobalState.currentTranformationOperationState = enum_TransformationOperation.TRANSLATE;
-
-    newGlobalState.referenceImageTransformation = getIdentityMatrix();
-    newGlobalState.interactiveImageTransformation = getIdentityMatrix();
-
-    newGlobalState.transformationChanges = getIdentityTransformations();
-
-    return newGlobalState;
+    return resultingGlobalState;
 }
 
-function init() {
-
-    // g_keypoints = generateRandomKeypoints({x: g_canvasImage.width, y: g_canvasImage.height}, g_numberOfKeypoints);
+function initAfterImageLoad() {
     g_globalState = buildGlobalState();
-    // wipeTransformationChanges();
-    // g_interactiveImageTransformation = getIdentityMatrix();
-    // g_referenceImageTransformation = getIdentityMatrix();
-    // setCurrnetOperation(enum_TransformationOperation.TRANSLATE);
     draw();
-    //window.requestAnimationFrame(draw);
 }
 
 function loadImageAndInit(imageSrc) {
-    //g_canvasImage.src = 'dog1_resize.jpg';
-    g_sharedBackgroundImage = new Image();
-    g_sharedBackgroundImage.src = imageSrc;
-    g_sharedBackgroundImage.onload = function () {
-        init();
+    _g_preloadImage = new Image();
+    _g_preloadImage.src = imageSrc;
+    _g_preloadImage.onload = function () {
+        initAfterImageLoad();
     };
 }
+
 
 var start = 0;
 function animateStep(timestamp) {
     if (!start) start = timestamp;
     var progress = timestamp - start;
-    g_transformationChanges.rotation = progress / 100 % 360;
-    g_transformationChanges.uniformScale = progress / 100000 % 360;
+    temporaryAppliedTransformations.rotation = progress / 100 % 360;
+    temporaryAppliedTransformations.uniformScale = progress / 100000 % 360;
     console.log(progress % 360);
 
-    if (g_transformationChanges.uniformScale < 1) {
+    if (temporaryAppliedTransformations.uniformScale < 1) {
         window.requestAnimationFrame(animateStep);
     }
     g_skipListGen = true;
@@ -1674,7 +1619,7 @@ function animateStep(timestamp) {
 
 
 function animate() {
-    g_transformationChanges.transformationCenterPoint = {
+    temporaryAppliedTransformations.transformationCenterPoint = {
         x: 280 / 2,
         y: 280 / 2
     };
@@ -1682,7 +1627,10 @@ function animate() {
     window.requestAnimationFrame(animateStep);
 }
 
-loadImageAndInit('images/dog1_resize3.jpg');
+function init() {
+    loadImageAndInit('images/dog1_resize3.jpg');    
+}
 
+init();
 
 
