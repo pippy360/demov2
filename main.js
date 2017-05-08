@@ -1551,9 +1551,9 @@ function changeNumberOfKeypoints(newNumberOfKeypoints) {
 
 function buildCommonCanvasState(imageCanvasId, overlayCanvasId, preloadedImage) {
     var returnedCanvasState = newCanvasState();
-    returnedCanvasState.uiLayerId = REFERENCE_CANVAS_ID;
-    returnedCanvasState.imageLayerId = REFERENCE_CANVAS_OVERLAY_ID;
-    returnedCanvasState.canvas = document.getElementById(REFERENCE_CANVAS_ID);
+    returnedCanvasState.uiLayerId = imageCanvasId;
+    returnedCanvasState.imageLayerId = overlayCanvasId;
+    returnedCanvasState.canvas = document.getElementById(imageCanvasId);
     returnedCanvasState.layers = [];
     returnedCanvasState.layers.push(newLayer(preloadedImage));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
