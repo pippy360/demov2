@@ -145,6 +145,10 @@ function getIdentityTransformations() {
     return ret;
 }
 
+function wipeTemporaryAppliedTransformations() {
+    g_globalState.temporaryAppliedTransformations = getIdentityTransformations();
+}
+
 function getActiveLayer(globalState) {
     return globalState.activeCanvas.activeLayer;
 }
