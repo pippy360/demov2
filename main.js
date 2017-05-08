@@ -157,6 +157,7 @@ function applyTransformationToCurrentActiveTransformationMatrix(globalState, res
     var layer = getActiveLayer(globalState);
     var temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations);
     layer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, layer.appliedTransformations);
+    //layer.appliedTransformations = matrixMultiply(layer.appliedTransformations, temporaryAppliedTransformationsMat);
 }
 
 function getReferenceImageTransformations() {
@@ -1164,10 +1165,16 @@ function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas
 
 }
 
-function drawLayerWithAppliedTransformations(canvasState, layer) {
+function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
 
     const canvasContext = canvasState.canvas.getContext('2d');
-    drawBackgroudImageWithTransformationMatrix(canvasContext, layer.image, layer.appliedTransformations);
+    var transfomationsMat;
+    if (shouldApplyTemporaryTransformations){
+        transfomationsMat = matrixMultiply(temporaryTransformationsMat, layer.appliedTransformations);
+    } else {
+        transfomationsMat = layer.appliedTransformations;
+    }
+    drawBackgroudImageWithTransformationMatrix(canvasContext, layer.image, transfomationsMat);
 
     // var referenceImageTransformations = getReferenceImageTransformations();
     // if (g_isMouseDownAndClickedOnCanvas || g_forceApplyTransformations) {
@@ -1210,25 +1217,29 @@ function generateOutputList() {
     $("#number_of_matching_triangles_output").html("Actual Matches: " + g_triangleMapByReferenceTriangleIndex.size);
 }
 
-function drawLayers(canvasState, layers) {
+
+function drawLayers(canvasState, layers, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
     var canvasContext = canvasState.canvas.getContext('2d');
     paintCanvasWhite(canvasContext);
     for(var i = 0; i < layers.length; i++) {
-        drawLayerWithAppliedTransformations(canvasState, layers[i]);
+        const applyTemporaryTransformations = shouldApplyTemporaryTransformations && layers[i] == canvasState.activeLayer;
+        drawLayerWithAppliedTransformations(canvasState, layers[i], applyTemporaryTransformations, temporaryTransformationsMat);
     }
 }
 
 function draw() {
 
-    
-    
+    var tempAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(g_globalState.temporaryAppliedTransformations);
+
     var layers;
 
     layers = g_globalState.interactiveCanvasState.layers;
-    drawLayers(g_globalState.interactiveCanvasState, layers);
+    var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
+    drawLayers(g_globalState.interactiveCanvasState, layers, isInteractiveCanvasActive, tempAppliedTransformationsMat);
 
+    var isReferenceCanvasActive = g_globalState.activeCanvas == g_globalState.referenceCanvasState;
     layers = g_globalState.referenceCanvasState.layers;
-    drawLayers(g_globalState.referenceCanvasState, layers);
+    drawLayers(g_globalState.referenceCanvasState, layers, isReferenceCanvasActive, tempAppliedTransformationsMat);
 
     // var referenceTransformedCroppingPoints1 = getTransformedCroppingPointsMatrix(g_referenceCanvasCroppingPolygonPoints, g_referenceCanvasCroppingPolygonInverseMatrix);
     // var referenceTransformedCroppingPoints2 = getTransformedCroppingPointsMatrix(referenceTransformedCroppingPoints1, referenceImageTransformations);
@@ -1278,7 +1289,7 @@ $(document).mouseup(function (e) {
 });
 
 $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
-    // g_globalState.currentActiveCanvasId = INTERACTIVE_CANVAS_ID;//FIXME: TODO:
+    g_globalState.activeCanvas = g_globalState.interactiveCanvasState;
 
     e.preventDefault();
     g_globalState.isMouseDownAndClickedOnCanvas = true;
@@ -1286,9 +1297,9 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 });
 
 $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
-    // if (g_globalState.currentActiveCanvasId != INTERACTIVE_CANVAS_ID) {//FIXME: TODO:
-        // return;
-    // }
+    if (g_globalState.activeCanvas != g_globalState.interactiveCanvasState) {
+        return;
+    }
 
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
@@ -1300,7 +1311,7 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mouseup(function (e) {
 });
 
 $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousedown(function (e) {
-    // g_currentActiveCanvasId = REFERENCE_CANVAS_ID;//FIXME: TODO:
+    g_globalState.activeCanvas = g_globalState.referenceCanvasState;
 
     e.preventDefault();
     g_globalState.isMouseDownAndClickedOnCanvas = true;
@@ -1308,9 +1319,10 @@ $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 });
 
 $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousemove(function (e) {
-    if (g_globalState.currentActiveCanvasId != REFERENCE_CANVAS_ID) {
+    if (g_globalState.activeCanvas != g_globalState.referenceCanvasState) {
         return;
     }
+
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
     }
@@ -1535,11 +1547,9 @@ function handleMouseDownOnCanvas(e) {
 
 function applyTransformationEffects(state) {
     if (state == enum_TransformationOperation.TRANSLATE) {
-        $("#interactiveCanvas").addClass("move");
-        $("#referenceCanvas").addClass("move");
+        $(".twoCanvasWrapper").addClass("move");
     } else {
-        $("#interactiveCanvas").removeClass("move");
-        $("#referenceCanvas").removeClass("move");
+        $(".twoCanvasWrapper").removeClass("move");
     }
 }
 
@@ -1592,6 +1602,7 @@ function buildGlobalState() {
 
 function initAfterImageLoad() {
     g_globalState = buildGlobalState();
+    setCurrnetOperation(enum_TransformationOperation.TRANSLATE);
     draw();
 }
 
