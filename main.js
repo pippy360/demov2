@@ -1380,7 +1380,7 @@ function handleMouseUp(e) {
             break;
     }
 
-    wipeTemporaryAppliedTransformations();//TODO: FIXME:
+    wipeTemporaryAppliedTransformations();
 }
 
 
