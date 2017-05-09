@@ -87,6 +87,11 @@ function newGlobalState() {
     };
 }
 
+function reset() {
+    console.log("Reset called.");
+    //TODO: FIXME
+}
+
 var enum_TransformationOperation = {
     TRANSLATE: 1,
     UNIFORM_SCALE: 2,
