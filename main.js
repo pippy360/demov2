@@ -1278,7 +1278,7 @@ $(document).mousedown(function (e) {
 });
 
 $(document).mousemove(function (e) {
-    if (g_globalState.isMouseDownAndClickedOnCanvas) {
+    if (g_globalState != null && g_globalState.isMouseDownAndClickedOnCanvas) {
         g_globalState.referenceImageHighlightedTriangle = null;
         handleMouseMoveOnDocument(e);
         draw();
@@ -1286,7 +1286,7 @@ $(document).mousemove(function (e) {
 });
 
 $(document).mouseup(function (e) {
-    if (g_globalState.isMouseDownAndClickedOnCanvas) {
+    if (g_globalState != null && g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseUp(e);
         g_globalState.isMouseDownAndClickedOnCanvas = false;
         draw();
@@ -1294,6 +1294,10 @@ $(document).mouseup(function (e) {
 });
 
 $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
+    if (g_globalState == null) {
+        return;
+    }
+    
     g_globalState.activeCanvas = g_globalState.interactiveCanvasState;
 
     e.preventDefault();
@@ -1302,7 +1306,7 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 });
 
 $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
-    if (g_globalState.activeCanvas != g_globalState.interactiveCanvasState) {
+    if (g_globalState == null || g_globalState.activeCanvas != g_globalState.interactiveCanvasState) {
         return;
     }
 
@@ -1316,6 +1320,10 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mouseup(function (e) {
 });
 
 $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousedown(function (e) {
+    if (g_globalState == null) {
+        return;
+    }
+    
     g_globalState.activeCanvas = g_globalState.referenceCanvasState;
 
     e.preventDefault();
@@ -1324,7 +1332,7 @@ $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 });
 
 $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousemove(function (e) {
-    if (g_globalState.activeCanvas != g_globalState.referenceCanvasState) {
+    if (g_globalState == null || g_globalState.activeCanvas != g_globalState.referenceCanvasState) {
         return;
     }
 
