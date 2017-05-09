@@ -1362,7 +1362,7 @@ function getCurrentCanvasMousePosition(e) {
 }
 
 function handleMouseUpCrop(mousePosition, activeLayer) {
-    var area = calcPolygonArea(activeLayer.croppingPoly);
+    var area = calcPolygonArea(activeLayer.croppingPolygon);
     if (area < MIN_CROPPING_POLYGON_AREA) {
         activeLayer.croppingPolygon = [];
     }
