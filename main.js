@@ -29,7 +29,7 @@ const REFERENCE_CANVAS_ID = "databaseImageCanvasImageContent";
 const REFERENCE_CANVAS_OVERLAY_ID = "databaseImageCanvasUiOverlay";
 
 var g_numberOfKeypoints = 30;
-const g_minCroppingPolygonArea = 600;
+const MIN_CROPPING_POLYGON_AREA = 600;
 
 function newStep(minPntDist, maxPntDist, minTriArea, colour) {
     return {
@@ -54,19 +54,19 @@ const g_steps = [
 
 function newLayer(layerImage) {
     return {
-        canvasCroppingPolygonPoints: null,
-        canvasCroppingPolygonInverseMatrix: null,//the inverse of the transformations applied at the time of drawing
+        croppingPolygon: null,
+        croppingPolygonInverseMatrix: null,//the inverse of the transformations applied at the time of drawing
         image: layerImage,
         appliedTransformations: getIdentityMatrix(),
         visable: true,
-        layerColour: [0,0,0], //used for canvas UI overlay elements
+        layerColour: [0, 0, 0], //used for canvas UI overlay elements
         keypoints: []
     };
 }
 
 function newCanvasState() {
     return {
-        highlightedTriangle: null,    
+        highlightedTriangle: null,
         uiLayerId: "",
         layers: [],
         activeLayer: null
@@ -1174,7 +1174,7 @@ function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemp
 
     const canvasContext = canvasState.canvas.getContext('2d');
     var transfomationsMat;
-    if (shouldApplyTemporaryTransformations){
+    if (shouldApplyTemporaryTransformations) {
         transfomationsMat = matrixMultiply(temporaryTransformationsMat, layer.appliedTransformations);
     } else {
         transfomationsMat = layer.appliedTransformations;
@@ -1226,7 +1226,7 @@ function generateOutputList() {
 function drawLayers(canvasState, layers, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
     var canvasContext = canvasState.canvas.getContext('2d');
     paintCanvasWhite(canvasContext);
-    for(var i = 0; i < layers.length; i++) {
+    for (var i = 0; i < layers.length; i++) {
         const applyTemporaryTransformations = shouldApplyTemporaryTransformations && layers[i] == canvasState.activeLayer;
         drawLayerWithAppliedTransformations(canvasState, layers[i], applyTemporaryTransformations, temporaryTransformationsMat);
     }
@@ -1361,20 +1361,10 @@ function getCurrentCanvasMousePosition(e) {
 
 }
 
-function handleMouseUpCrop(mousePosition) {
-    var croppingPolyPoints = [];
-    if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-        croppingPolyPoints = g_interactiveCanvasCroppingPolygonPoints;
-    } else {
-        croppingPolyPoints = g_referenceCanvasCroppingPolygonPoints;
-    }
-    var area = calcPolygonArea(croppingPolyPoints);
-    if (area < g_minCroppingPolygonArea) {
-        if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-            g_interactiveCanvasCroppingPolygonPoints = [];
-        } else {
-            g_referenceCanvasCroppingPolygonPoints = [];
-        }
+function handleMouseUpCrop(mousePosition, activeLayer) {
+    var area = calcPolygonArea(activeLayer.croppingPoly);
+    if (area < MIN_CROPPING_POLYGON_AREA) {
+        activeLayer.croppingPolygon = [];
     }
 }
 
@@ -1386,11 +1376,12 @@ function handleMouseUp(e) {
         case enum_TransformationOperation.TRANSLATE: /*no break*/
         case enum_TransformationOperation.NON_UNIFORM_SCALE: /*no break*/
         case enum_TransformationOperation.UNIFORM_SCALE: /*no break*/
-        case enum_TransformationOperation.ROTATE: 
+        case enum_TransformationOperation.ROTATE:
             applyTransformationToCurrentActiveTransformationMatrix(globalState);
             break;
         case enum_TransformationOperation.CROP:
-            handleMouseUpCrop(canvasMousePosition);
+            var activeLayer = g_globalState.activeCanvas.activeLayer;
+            handleMouseUpCrop(canvasMousePosition, activeLayer);
             break;
         default:
             console.log("ERROR: Invalid state.");
@@ -1455,12 +1446,8 @@ function handleMouseMoveRotate(pageMouseDownPosition, pageMousePosition, globalS
     globalState.temporaryAppliedTransformations.rotation = extraRotation;
 }
 
-function handleMouseMoveCrop(mousePosition, globalState) {
-    if (globalState.currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-        g_interactiveCanvasCroppingPolygonPoints.push(mousePosition);
-    } else {
-        g_referenceCanvasCroppingPolygonPoints.push(mousePosition);
-    }
+function handleMouseMoveCrop(mousePosition, activeLayer) {
+    activeLayer.croppingPolygon.push(mousePosition);
 }
 
 function handleMouseMoveOnDocument(e) {
@@ -1505,7 +1492,8 @@ function handleMouseMoveOnCanvas(e) {
             //do nothing
             break;
         case enum_TransformationOperation.CROP:
-            handleMouseMoveCrop(canvasMousePosition);
+            var activeLayer = g_globalState.activeCanvas.activeLayer;
+            handleMouseMoveCrop(canvasMousePosition, activeLayer);
             break;
         default:
             console.log("ERROR: Invalid state.");
@@ -1513,14 +1501,9 @@ function handleMouseMoveOnCanvas(e) {
     }
 }
 
-function handleMouseDownCrop(mousePosition) {
-    if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-        g_interactiveCanvasCroppingPolygonPoints = [];
-        g_interactiveCanvasCroppingPolygonInverseMatrix = math.inv(g_interactiveImageTransformation);
-    } else {
-        g_referenceCanvasCroppingPolygonPoints = [];
-        g_referenceCanvasCroppingPolygonInverseMatrix = math.inv(g_referenceImageTransformation);
-    }
+function handleMouseDownCrop(activeLayer) {
+    activeLayer.croppingPolygon = [];
+    activeLayer.croppingPolygonInverseMatrix = math.inv(activeLayer.appliedTransformations);
 }
 
 function handleMouseDownOnCanvas(e) {
@@ -1542,7 +1525,8 @@ function handleMouseDownOnCanvas(e) {
             //do nothing
             break;
         case enum_TransformationOperation.CROP:
-            handleMouseDownCrop(canvasMousePosition);
+            var activeLayer = g_globalState.activeCanvas.activeLayer;
+            handleMouseDownCrop(activeLayer);
             break;
         default:
             console.log("ERROR: Invalid state.");
@@ -1649,7 +1633,7 @@ function animate() {
 }
 
 function init() {
-    loadImageAndInit('images/dog1_resize3.jpg');    
+    loadImageAndInit('images/dog1_resize3.jpg');
 }
 
 init();
