@@ -1170,6 +1170,53 @@ function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas
 
 }
 
+function cropCanvasImage(ctx, inPoints) {
+    if (inPoints.length == 0) {
+        return;
+    }
+
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.0)';
+    ctx.beginPath();
+
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, 512);
+    ctx.lineTo(512, 512);
+    ctx.lineTo(512, 0);
+    ctx.closePath();
+
+    ctx.moveTo(inPoints[0].x, inPoints[0].y);
+    for (var i = 1; i < inPoints.length; i++) {//i = 1 to skip first point
+        var currentPoint = inPoints[i];
+        ctx.lineTo(currentPoint.x, currentPoint.y);
+    }
+    ctx.closePath();
+
+    //fill
+    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+    // if (showFillEffect) {//TODO: FIXME:
+    //     ctx.fillStyle = 'rgba(242, 242, 242, 0.3)';
+    //     ctx.strokeStyle = 'rgba(255, 0, 0, 0.9)';
+    // }
+    ctx.mozFillRule = 'evenodd'; //for old firefox 1~30
+    ctx.fill('evenodd'); //for firefox 31+, IE 11+, chrome
+    ctx.stroke();
+    return ctx.getImageData(0,0, ctx.canvas.width, ctx.canvas.height);
+}
+
+function cropLayerImage(canvasSize, transformedImage, croppingPolygon, croppingPolygonInverseMatrix, transformationsMat) {
+
+    var tempCanvasElement = document.createElement('canvas');
+    tempCanvasElement.width = canvasSize.width;
+    tempCanvasElement.height = canvasSize.height;
+
+    var ctx = tempCanvasElement.getContext("2d");
+    ctx.drawImage(transformedImage, 0, 0);
+    var croppingPointsToken1 = getTransformedCroppingPointsMatrix(croppingPolygon, croppingPolygonInverseMatrix);
+    var croppingPointsToken2 = getTransformedCroppingPointsMatrix(croppingPointsToken1, transformationsMat);
+    var croppedTransformedImage = cropCanvasImage(ctx, croppingPointsToken2);
+    return croppedTransformedImage;
+}
+
 function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
 
     const canvasContext = canvasState.canvas.getContext('2d');
@@ -1179,25 +1226,15 @@ function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemp
     } else {
         transfomationsMat = layer.appliedTransformations;
     }
-    drawBackgroudImageWithTransformationMatrix(canvasContext, layer.image, transfomationsMat);
-
-    // var referenceImageTransformations = getReferenceImageTransformations();
-    // if (g_isMouseDownAndClickedOnCanvas || g_forceApplyTransformations) {
-    //     const temporaryAppliedTransformationsMatrix = convertTransformationObjectToTransformationMatrix(temporaryAppliedTransformations);
-    //     if (g_currentActiveCanvasId == INTERACTIVE_CANVAS_ID) {
-    //         interactiveImageTransformations = matrixMultiply(temporaryAppliedTransformationsMatrix, interactiveImageTransformations);
-    //     } else {
-    //         referenceImageTransformations = matrixMultiply(temporaryAppliedTransformationsMatrix, referenceImageTransformations);
-    //     }
-    // }
-    //
-    // var showFillEffect = g_isMouseDownAndClickedOnCanvas
-    // showFillEffect = showFillEffect && g_currentTranformationOperationState == enum_TransformationOperation.CROP;
-    // showFillEffect = showFillEffect && isActiveCanvas;
-    //
-    // showFillEffect = isActive;
-    // drawClosingPolygon(referenceCanvasContext, referenceTransformedCroppingPoints2, showFillEffect);
-    //
+    var canvasSize = {
+        width: canvasState.canvas.width,
+        height: canvasState.canvas.height
+    };
+    var drawingImage = layer.image;
+    if (layer.croppingPolygon != null && layer.croppingPolygon != []){
+        drawingImage = cropLayerImage(canvasSize, layer.image, layer.croppingPolygon, layer.croppingPolygonInverseMatrix, transfomationsMat);
+    }
+    drawBackgroudImageWithTransformationMatrix(canvasContext, drawingImage, transfomationsMat);
 }
 
 function generateOutputList() {
