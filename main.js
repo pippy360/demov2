@@ -1171,36 +1171,20 @@ function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas
 }
 
 function cropCanvasImage(ctx, inPoints) {
+
     if (inPoints.length == 0) {
         return;
     }
-
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.0)';
     ctx.beginPath();
-
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, 512);
-    ctx.lineTo(512, 512);
-    ctx.lineTo(512, 0);
-    ctx.closePath();
 
     ctx.moveTo(inPoints[0].x, inPoints[0].y);
     for (var i = 1; i < inPoints.length; i++) {//i = 1 to skip first point
         var currentPoint = inPoints[i];
-        ctx.lineTo(currentPoint.x, currentPoint.y);
+        ctx.lineTo(currentPoint.x,currentPoint.y);
     }
     ctx.closePath();
-
-    //fill
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    // if (showFillEffect) {//TODO: FIXME:
-    //     ctx.fillStyle = 'rgba(242, 242, 242, 0.3)';
-    //     ctx.strokeStyle = 'rgba(255, 0, 0, 0.9)';
-    // }
-    ctx.mozFillRule = 'evenodd'; //for old firefox 1~30
-    ctx.fill('evenodd'); //for firefox 31+, IE 11+, chrome
-    ctx.stroke();
-    return ctx.getImageData(0,0, ctx.canvas.width, ctx.canvas.height);
+    ctx.clip();
+    return ctx.canvas;
 }
 
 function cropLayerImage(canvasSize, transformedImage, croppingPolygon, croppingPolygonInverseMatrix, transformationsMat) {
@@ -1210,10 +1194,10 @@ function cropLayerImage(canvasSize, transformedImage, croppingPolygon, croppingP
     tempCanvasElement.height = canvasSize.height;
 
     var ctx = tempCanvasElement.getContext("2d");
-    ctx.drawImage(transformedImage, 0, 0);
     var croppingPointsToken1 = getTransformedCroppingPointsMatrix(croppingPolygon, croppingPolygonInverseMatrix);
     var croppingPointsToken2 = getTransformedCroppingPointsMatrix(croppingPointsToken1, transformationsMat);
     var croppedTransformedImage = cropCanvasImage(ctx, croppingPointsToken2);
+    ctx.drawImage(transformedImage, 0, 0);
     return croppedTransformedImage;
 }
 
@@ -1231,7 +1215,7 @@ function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemp
         height: canvasState.canvas.height
     };
     var drawingImage = layer.image;
-    if (layer.croppingPolygon != null && layer.croppingPolygon != []){
+    if (layer.croppingPolygon != null && layer.croppingPolygon.length != 0){
         drawingImage = cropLayerImage(canvasSize, layer.image, layer.croppingPolygon, layer.croppingPolygonInverseMatrix, transfomationsMat);
     }
     drawBackgroudImageWithTransformationMatrix(canvasContext, drawingImage, transfomationsMat);
@@ -1274,7 +1258,6 @@ function draw() {
     var tempAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(g_globalState.temporaryAppliedTransformations);
 
     var layers;
-
     layers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
     drawLayers(g_globalState.interactiveCanvasState, layers, isInteractiveCanvasActive, tempAppliedTransformationsMat);
