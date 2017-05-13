@@ -60,7 +60,7 @@ function newLayer(layerImage) {
         appliedTransformations: getIdentityMatrix(),
         visable: true,
         layerColour: [0, 0, 0], //used for canvas UI overlay elements
-        keypoints: []
+        keypoints: generateRandomKeypoints({width: layerImage.width, height: layerImage.height}, g_numberOfKeypoints)
     };
 }
 
@@ -616,8 +616,8 @@ function generateRandomKeypoints(imageSize, numberOfKeypoints) {
     var ret = [];
     for (var i = 0; i < numberOfKeypoints; i++) {
 
-        var x = Math.floor((Math.random() * imageSize.x));
-        var y = Math.floor((Math.random() * imageSize.y));
+        var x = Math.floor((Math.random() * imageSize.width));
+        var y = Math.floor((Math.random() * imageSize.height));
         var kp = {
             x: x,
             y: y
@@ -915,7 +915,6 @@ function drawClosingPolygon(ctx, inPoints, showFillEffect) {
         ctx.fillStyle = 'rgba(242, 242, 242, 0.3)';
         ctx.strokeStyle = 'rgba(255, 0, 0, 0.9)';
     }
-    ctx.mozFillRule = 'evenodd'; //for old firefox 1~30
     ctx.fill('evenodd'); //for firefox 31+, IE 11+, chrome
     ctx.stroke();
 };
@@ -959,9 +958,9 @@ function filterBasedOnVisible(keypoints, boundingBox) {
     var ret = [];
     for (var i = 0; i < keypoints.length; i++) {
         var keypoint = keypoints[i];
-        if (keypoint.x >= boundingBox.x
+        if (keypoint.x >= boundingBox.width
             || keypoint.x < 0
-            || keypoint.y >= boundingBox.y
+            || keypoint.y >= boundingBox.height
             || keypoint.y < 0) {
             //ignore this keypoint
         } else {
@@ -973,7 +972,12 @@ function filterBasedOnVisible(keypoints, boundingBox) {
 
 function getVisableKeypoints(keypoints, canvasDimensions, croppingPolygon) {
     var keypointsInsideCanvas = filterBasedOnVisible(keypoints, canvasDimensions);
-    var result = filterBasedOnClosingPoly(keypointsInsideCanvas, croppingPolygon);
+    var result;
+    if (croppingPolygon != null && croppingPolygon.length > 0) {
+        result = filterBasedOnClosingPoly(keypointsInsideCanvas, croppingPolygon);
+    } else {
+        result = keypointsInsideCanvas;
+    }
     return result;
 }
 
@@ -1180,10 +1184,11 @@ function cropCanvasImage(ctx, inPoints) {
     ctx.moveTo(inPoints[0].x, inPoints[0].y);
     for (var i = 1; i < inPoints.length; i++) {//i = 1 to skip first point
         var currentPoint = inPoints[i];
-        ctx.lineTo(currentPoint.x,currentPoint.y);
+        ctx.lineTo(currentPoint.x, currentPoint.y);
     }
     ctx.closePath();
-    ctx.clip();
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.fill('evenodd');
     return ctx.canvas;
 }
 
@@ -1195,15 +1200,62 @@ function cropLayerImage(canvasSize, transformedImage, croppingPolygon, croppingP
 
     var ctx = tempCanvasElement.getContext("2d");
     var croppingPointsToken1 = getTransformedCroppingPointsMatrix(croppingPolygon, croppingPolygonInverseMatrix);
-    var croppingPointsToken2 = getTransformedCroppingPointsMatrix(croppingPointsToken1, transformationsMat);
-    var croppedTransformedImage = cropCanvasImage(ctx, croppingPointsToken2);
     ctx.drawImage(transformedImage, 0, 0);
-    return croppedTransformedImage;
+
+    cropCanvasImage(ctx, croppingPointsToken1);
+    return ctx.canvas;
+}
+
+
+function isKeypointOccluded(keypoint, layers, activeLayer) {
+    for (var i = 0; i < layers.length; i++) {
+        var layer = layers[i];
+        if (layer == activeLayer) {
+            continue;
+        }
+
+        if (layer.croppingPolygon == null || layer.croppingPolygon.length == 0) {
+            continue;
+        }
+
+        //take the cropping shape
+        if (isPointInPolygon(keypoint, layer.croppingPolygon)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function getNonOccludedKeypoints(keypoints, layers, activeLayer) {
+    var result = [];
+
+    for (var i = 0; i < keypoints.length; i++) {
+        var keypoint = keypoints[i];
+        if (isKeypointOccluded(keypoint, layers, activeLayer)) {
+            //ignore occluded keypoints
+        } else {
+            result.push(keypoint);
+        }
+    }
+    return result;
+}
+
+//FIXME: clean up parameters
+function drawUiLayer(canvasContext, keypoints, transformedCroppingPolygon, transformationsMat, layers, currentLayer) {
+    var canvasDimensions = {width: canvasContext.canvas.width, height: canvasContext.canvas.height};
+    var keypointsToken1 = convertKeypointsToMatrixKeypoints(keypoints);
+    var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, transformationsMat);
+    var keypointsToken3 = convertMatrixKeypointsToKeypointObjects(keypointsToken2);
+    var keypointsToken4 = getVisableKeypoints(keypointsToken3, canvasDimensions, currentLayer.croppingPolygon);
+    var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layers, currentLayer);
+    drawKeypoints(canvasContext, keypointsToken5);
+
 }
 
 function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
 
-    const canvasContext = canvasState.canvas.getContext('2d');
+    const imageCanvasContext = canvasState.imageLayerCanvas.getContext('2d');
+    const uiCanvasContext = canvasState.uiLayerCanvas.getContext('2d');
     var transfomationsMat;
     if (shouldApplyTemporaryTransformations) {
         transfomationsMat = matrixMultiply(temporaryTransformationsMat, layer.appliedTransformations);
@@ -1211,14 +1263,15 @@ function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemp
         transfomationsMat = layer.appliedTransformations;
     }
     var canvasSize = {
-        width: canvasState.canvas.width,
-        height: canvasState.canvas.height
+        width: imageCanvasContext.canvas.width,
+        height: imageCanvasContext.canvas.height
     };
     var drawingImage = layer.image;
-    if (layer.croppingPolygon != null && layer.croppingPolygon.length != 0){
+    if (layer.croppingPolygon != null && layer.croppingPolygon.length != 0) {
         drawingImage = cropLayerImage(canvasSize, layer.image, layer.croppingPolygon, layer.croppingPolygonInverseMatrix, transfomationsMat);
     }
-    drawBackgroudImageWithTransformationMatrix(canvasContext, drawingImage, transfomationsMat);
+    drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transfomationsMat);
+    drawUiLayer(uiCanvasContext, layer.keypoints, layer.croppingPolygon, transfomationsMat, canvasState.layers, layer);
 }
 
 function generateOutputList() {
@@ -1245,11 +1298,14 @@ function generateOutputList() {
 
 
 function drawLayers(canvasState, layers, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
-    var canvasContext = canvasState.canvas.getContext('2d');
-    paintCanvasWhite(canvasContext);
+    var imageCanvasContext = canvasState.imageLayerCanvas.getContext('2d');
+    paintCanvasWhite(imageCanvasContext);
+    var uiCanvasContext = canvasState.uiLayerCanvas.getContext('2d');
+    uiCanvasContext.clearRect(0, 0, 400, 400);//fixme: hardcoded values
     for (var i = 0; i < layers.length; i++) {
-        const applyTemporaryTransformations = shouldApplyTemporaryTransformations && layers[i] == canvasState.activeLayer;
-        drawLayerWithAppliedTransformations(canvasState, layers[i], applyTemporaryTransformations, temporaryTransformationsMat);
+        var idx = (layers.length - 1) - i;
+        const applyTemporaryTransformations = shouldApplyTemporaryTransformations && layers[idx] == canvasState.activeLayer;
+        drawLayerWithAppliedTransformations(canvasState, layers[idx], applyTemporaryTransformations, temporaryTransformationsMat);
     }
 }
 
@@ -1317,7 +1373,7 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
     if (g_globalState == null) {
         return;
     }
-    
+
     g_globalState.activeCanvas = g_globalState.interactiveCanvasState;
 
     e.preventDefault();
@@ -1343,7 +1399,7 @@ $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousedown(function (e) {
     if (g_globalState == null) {
         return;
     }
-    
+
     g_globalState.activeCanvas = g_globalState.referenceCanvasState;
 
     e.preventDefault();
@@ -1534,11 +1590,36 @@ function handleMouseDownCrop(activeLayer) {
     activeLayer.croppingPolygonInverseMatrix = math.inv(activeLayer.appliedTransformations);
 }
 
+function getActiveLayerWithCanvasPosition(canvasMousePosition, layers, currentActiveLayer) {
+    
+    for (var i = 0; i < layers.length; i++) {
+        var layer = layers[i];
+        if (layer.croppingPolygon == null || layer.croppingPolygon.length == 0) {
+            continue;
+        }
+
+        //take the cropping shape
+        if (isPointInPolygon(canvasMousePosition, layer.croppingPolygon)) {
+            return layer;
+        }
+    }
+    return currentActiveLayer;
+    
+}
+
 function handleMouseDownOnCanvas(e) {
-    var pageMousePosition = getCurrentPageMousePosition(e);
-    var canvasMousePosition = getCurrentCanvasMousePosition(e);
+    const pageMousePosition = getCurrentPageMousePosition(e);
+    const canvasMousePosition = getCurrentCanvasMousePosition(e);
+
     g_globalState.pageMouseDownPosition = pageMousePosition;
     g_globalState.temporaryAppliedTransformations.transformationCenterPoint = canvasMousePosition;
+
+    //FIXME: set the active canvas
+
+    const currentActiveLayer = g_globalState.activeCanvas.activeLayer;
+    const clickedActiveLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, currentActiveLayer);
+    g_globalState.activeCanvas.activeLayer = clickedActiveLayer;
+
     switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
             //do nothing
@@ -1553,8 +1634,7 @@ function handleMouseDownOnCanvas(e) {
             //do nothing
             break;
         case enum_TransformationOperation.CROP:
-            var activeLayer = g_globalState.activeCanvas.activeLayer;
-            handleMouseDownCrop(activeLayer);
+            handleMouseDownCrop(currentActiveLayer);
             break;
         default:
             console.log("ERROR: Invalid state.");
@@ -1583,9 +1663,10 @@ function changeNumberOfKeypoints(newNumberOfKeypoints) {
 
 function buildCommonCanvasState(imageCanvasId, overlayCanvasId, preloadedImage) {
     var returnedCanvasState = newCanvasState();
-    returnedCanvasState.uiLayerId = imageCanvasId;
-    returnedCanvasState.imageLayerId = overlayCanvasId;
-    returnedCanvasState.canvas = document.getElementById(imageCanvasId);
+    returnedCanvasState.uiLayerId = overlayCanvasId;
+    returnedCanvasState.uiLayerCanvas = document.getElementById(overlayCanvasId);
+    returnedCanvasState.imageLayerId = imageCanvasId;
+    returnedCanvasState.imageLayerCanvas = document.getElementById(imageCanvasId);
     returnedCanvasState.layers = [];
     returnedCanvasState.layers.push(newLayer(preloadedImage));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
@@ -1628,9 +1709,19 @@ function loadImageAndInit(imageSrc) {
     _g_preloadImage.src = imageSrc;
     _g_preloadImage.onload = function () {
         initAfterImageLoad();
+        _debug_addlayer('images/fish_1.jpg');
     };
 }
 
+//fixme: remove this
+function _debug_addlayer(imageSrc) {
+    var image;
+    image = new Image();
+    image.src = imageSrc;
+    image.onload = function () {
+        g_globalState.interactiveCanvasState.layers.push(newLayer(image));
+    };
+}
 
 var start = 0;
 function animateStep(timestamp) {
