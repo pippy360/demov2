@@ -1518,7 +1518,11 @@ function handleMouseMoveRotate(pageMouseDownPosition, pageMousePosition, globalS
 }
 
 function handleMouseMoveCrop(mousePosition, activeLayer) {
-    activeLayer.nonTransformedImageOutline.push(mousePosition);
+    var invMat = math.inv(activeLayer.appliedTransformations);
+    var keypointMat = convertSingleKeypointToMatrix(mousePosition);
+    var transformedPointMat = applyTransformationMatToSingleKeypoint(keypointMat, invMat);
+    var transformedPoint = convertSingleMatrixKeypoinToKeypointObject(transformedPointMat);
+    activeLayer.nonTransformedImageOutline.push(transformedPoint);
 }
 
 function handleMouseMoveOnDocument(e) {
