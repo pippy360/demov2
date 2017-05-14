@@ -52,23 +52,32 @@ const g_steps = [
 // globalState
 //
 
-function buildRectangularCroppingPolyAroundImage(imageWidth, imageHeight) {
+function buildRect(x2, y2) {
     return [
         {x: 0, y: 0},
-        {x: imageWidth, y: 0},
-        {x: imageWidth, y: imageHeight},
-        {x: 0, y: imageHeight}
+        {x: x2, y: 0},
+        {x: x2, y: y2},
+        {x: 0, y: y2}
+    ]
+
+}
+
+function buildRectangularCroppingPolyFromLayer(layer) {
+    return [
+        {x: 0, y: 0},
+        {x: layer.image.width, y: 0},
+        {x: layer.image.width, y: layer.image.height},
+        {x: 0, y: layer.image.height}
     ]
 
 }
 
 function newLayer(layerImage) {
     return {
-        croppingPolygon: buildRectangularCroppingPolyAroundImage(layerImage.width, layerImage.height),
-        croppingPolygonInverseMatrix: getIdentityMatrix(),//the inverse of the transformations applied at the time of drawing
+        nonTransformedImageOutline: buildRect(layerImage.width, layerImage.height),
         image: layerImage,
         appliedTransformations: getIdentityMatrix(),
-        visable: true,
+        visible: true,
         layerColour: [0, 0, 0], //used for canvas UI overlay elements
         keypoints: generateRandomKeypoints({width: layerImage.width, height: layerImage.height}, g_numberOfKeypoints)
     };
@@ -127,20 +136,11 @@ function toggleDrawUIOverlayMode() {
     draw();
 }
 
-function toggleDrawKeypointsMode() {
-    g_shouldDrawKeypoints = !g_shouldDrawKeypoints;
-}
-
-function toggleDrawTrianglesMode() {
-    g_shouldDrawTriangles = !g_shouldDrawTriangles;
-}
-
-function getBackgroundImage() {
-    return g_canvasImage;
-}
-
-function getCroppingPointsTransformationMatrix() {
-    return g_interactiveCanvasCroppingPolygonInverseMatrix;
+function getTransformedImageOutline(imageOutline, appliedTransformations) {
+    var keypointsToken1 = convertKeypointsToMatrixKeypoints(imageOutline);
+    var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, appliedTransformations);
+    var keypointsToken3 = convertMatrixKeypointsToKeypointObjects(keypointsToken2);
+    return keypointsToken3
 }
 
 function getIdentityTransformations() {
@@ -168,7 +168,7 @@ function getActiveLayer(globalState) {
     return globalState.activeCanvas.activeLayer;
 }
 
-function applyTransformationToCurrentActiveTransformationMatrix(globalState, result) {
+function applyTransformationToCurrentActiveTransformationMatrix(globalState) {
     var layer = getActiveLayer(globalState);
     var temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations);
     layer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, layer.appliedTransformations);
@@ -949,7 +949,7 @@ function isPointInPolygon(point, vs) {
     return inside;
 };
 
-function filterBasedOnClosingPoly(keypoints, coords) {
+function filterKeypointsOutsidePolygon(keypoints, coords) {
     if (coords.length == 0) {
         return keypoints;
     }
@@ -962,33 +962,6 @@ function filterBasedOnClosingPoly(keypoints, coords) {
         }
     }
     return ret;
-}
-
-function filterBasedOnVisible(keypoints, boundingBox) {
-    var ret = [];
-    for (var i = 0; i < keypoints.length; i++) {
-        var keypoint = keypoints[i];
-        if (keypoint.x >= boundingBox.width
-            || keypoint.x < 0
-            || keypoint.y >= boundingBox.height
-            || keypoint.y < 0) {
-            //ignore this keypoint
-        } else {
-            ret.push(keypoint)
-        }
-    }
-    return ret;
-}
-
-function getVisableKeypoints(keypoints, canvasDimensions, croppingPolygon) {
-    var keypointsInsideCanvas = filterBasedOnVisible(keypoints, canvasDimensions);
-    var result;
-    if (croppingPolygon != null && croppingPolygon.length > 0) {
-        result = filterBasedOnClosingPoly(keypointsInsideCanvas, croppingPolygon);
-    } else {
-        result = keypointsInsideCanvas;
-    }
-    return result;
 }
 
 function getTransformedCroppingPointsMatrix(croppingPoints, transformationMatrix) {
@@ -1145,7 +1118,9 @@ function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas
         x: canvasContext.canvas.width,
         y: canvasContext.canvas.height
     };
-    var interactiveFilteredKeypoints = getVisableKeypoints(interactiveImageTransformedKeypoints, interactiveCanvasDimenstions, interactiveTransformedCroppingPoints2);
+    //fixme:
+    //filterKeypointsOutsidePolygon(keypoints, croppingPolygon);
+    var interactiveFilteredKeypoints = filterKeypointsOutsidePolygon(keypoints, croppingPolygon);
 
     g_cachedCalculatedInteractiveCanvasKeypoints = interactiveFilteredKeypoints;
     if (g_shouldDrawKeypoints) {
@@ -1197,51 +1172,46 @@ function cropCanvasImage(ctx, inPoints) {
         ctx.lineTo(currentPoint.x, currentPoint.y);
     }
     ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,0,0,1.0)';
+    ctx.stroke();
+
     ctx.globalCompositeOperation = 'destination-in';
     ctx.fill('evenodd');
     return ctx.canvas;
 }
 
-function cropLayerImage(canvasSize, transformedImage, croppingPolygon, croppingPolygonInverseMatrix, transformationsMat) {
+function cropLayerImage(canvasSize, transformedImage, croppingPolygon, transformationsMat) {
 
     var tempCanvasElement = document.createElement('canvas');
     tempCanvasElement.width = canvasSize.width;
     tempCanvasElement.height = canvasSize.height;
 
     var ctx = tempCanvasElement.getContext("2d");
-    var croppingPointsToken1 = getTransformedCroppingPointsMatrix(croppingPolygon, croppingPolygonInverseMatrix);
     ctx.drawImage(transformedImage, 0, 0);
 
-    cropCanvasImage(ctx, croppingPointsToken1);
+    cropCanvasImage(ctx, croppingPolygon);
     return ctx.canvas;
 }
 
 
-function isKeypointOccluded(keypoint, layers, activeLayer) {
+function isKeypointOccluded(keypoint, layers) {
     for (var i = 0; i < layers.length; i++) {
         var layer = layers[i];
-        if (layer == activeLayer) {
-            continue;
-        }
 
-        if (layer.croppingPolygon == null || layer.croppingPolygon.length == 0) {
-            continue;
-        }
-
-        //take the cropping shape
-        if (isPointInPolygon(keypoint, layer.croppingPolygon)) {
+        var imageOutline = getTransformedImageOutline(layer.nonTransformedImageOutline, layer.appliedTransformations)
+        if (isPointInPolygon(keypoint, imageOutline)) {
             return true;
         }
     }
     return false;
 }
 
-function getNonOccludedKeypoints(keypoints, layers, activeLayer) {
+function getNonOccludedKeypoints(keypoints, layers) {
     var result = [];
 
     for (var i = 0; i < keypoints.length; i++) {
         var keypoint = keypoints[i];
-        if (isKeypointOccluded(keypoint, layers, activeLayer)) {
+        if (isKeypointOccluded(keypoint, layers)) {
             //ignore occluded keypoints
         } else {
             result.push(keypoint);
@@ -1251,15 +1221,19 @@ function getNonOccludedKeypoints(keypoints, layers, activeLayer) {
 }
 
 //FIXME: clean up parameters
-function drawUiLayer(canvasContext, keypoints, transformedCroppingPolygon, transformationsMat, layers, currentLayer) {
+function drawUiLayer(canvasContext, transformationsMat, layers, currentLayer, isActiveLayer) {
     var canvasDimensions = {width: canvasContext.canvas.width, height: canvasContext.canvas.height};
-    var keypointsToken1 = convertKeypointsToMatrixKeypoints(keypoints);
+
+    var keypointsToken1 = convertKeypointsToMatrixKeypoints(currentLayer.keypoints);
     var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, transformationsMat);
     var keypointsToken3 = convertMatrixKeypointsToKeypointObjects(keypointsToken2);
-    var keypointsToken4 = getVisableKeypoints(keypointsToken3, canvasDimensions, currentLayer.croppingPolygon);
-    var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layers, currentLayer);
+    //TODO: FILTER BASE ON CANVAS DIMENSIONS
+    var imageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat)
+    var keypointsToken4 = filterKeypointsOutsidePolygon(keypointsToken3, imageOutline);
+    var idx = layers.indexOf(currentLayer);
+    var layersOnTop = layers.slice(0,idx);
+    var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layersOnTop);
     drawKeypoints(canvasContext, keypointsToken5);
-
 }
 
 function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
@@ -1276,12 +1250,9 @@ function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemp
         width: imageCanvasContext.canvas.width,
         height: imageCanvasContext.canvas.height
     };
-    var drawingImage = layer.image;
-    if (layer.croppingPolygon != null && layer.croppingPolygon.length != 0) {
-        drawingImage = cropLayerImage(canvasSize, layer.image, layer.croppingPolygon, layer.croppingPolygonInverseMatrix, transfomationsMat);
-    }
+    var drawingImage = cropLayerImage(canvasSize, layer.image, layer.nonTransformedImageOutline, transfomationsMat);
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transfomationsMat);
-    drawUiLayer(uiCanvasContext, layer.keypoints, layer.croppingPolygon, transfomationsMat, canvasState.layers, layer);
+    drawUiLayer(uiCanvasContext, transfomationsMat, canvasState.layers, layer);
 }
 
 function generateOutputList() {
@@ -1456,11 +1427,12 @@ function getCurrentCanvasMousePosition(e) {
 }
 
 function handleMouseUpCrop(mousePosition, activeLayer) {
-    var area = calcPolygonArea(activeLayer.croppingPolygon);
+    activeLayer.nonTransformedImageOutline
+    //FIXME: get the area of the transformed poly!!!
+    var area = calcPolygonArea(activeLayer.nonTransformedImageOutline);
     if (area < MIN_CROPPING_POLYGON_AREA) {
-        var width = activeLayer.image.width;
-        var height = activeLayer.image.height;
-        activeLayer.croppingPolygon = buildRectangularCroppingPolyAroundImage(width, height);
+        activeLayer.nonTransformedImageOutline = buildRectangularCroppingPolyFromLayer(activeLayer);
+        activeLayer.croppingPolygonInverseMatrix = getIdentityMatrix();
     }
 }
 
@@ -1469,9 +1441,12 @@ function handleMouseUp(e) {
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
     var globalState = g_globalState;
     switch (g_globalState.currentTranformationOperationState) {
-        case enum_TransformationOperation.TRANSLATE: /*no break*/
-        case enum_TransformationOperation.NON_UNIFORM_SCALE: /*no break*/
-        case enum_TransformationOperation.UNIFORM_SCALE: /*no break*/
+        case enum_TransformationOperation.TRANSLATE:
+        //No break, continue to next
+        case enum_TransformationOperation.NON_UNIFORM_SCALE:
+        //No break, continue to next
+        case enum_TransformationOperation.UNIFORM_SCALE:
+        //No break, continue to next
         case enum_TransformationOperation.ROTATE:
             applyTransformationToCurrentActiveTransformationMatrix(globalState);
             break;
@@ -1543,7 +1518,7 @@ function handleMouseMoveRotate(pageMouseDownPosition, pageMousePosition, globalS
 }
 
 function handleMouseMoveCrop(mousePosition, activeLayer) {
-    activeLayer.croppingPolygon.push(mousePosition);
+    activeLayer.nonTransformedImageOutline.push(mousePosition);
 }
 
 function handleMouseMoveOnDocument(e) {
@@ -1598,25 +1573,21 @@ function handleMouseMoveOnCanvas(e) {
 }
 
 function handleMouseDownCrop(activeLayer) {
-    activeLayer.croppingPolygon = [];
-    activeLayer.croppingPolygonInverseMatrix = math.inv(activeLayer.appliedTransformations);
+    activeLayer.nonTransformedImageOutline = [];
 }
 
 function getActiveLayerWithCanvasPosition(canvasMousePosition, layers, currentActiveLayer) {
-    
+
     for (var i = 0; i < layers.length; i++) {
         var layer = layers[i];
-        if (layer.croppingPolygon == null || layer.croppingPolygon.length == 0) {
-            continue;
-        }
-
+        var imageOutline = getTransformedImageOutline(layer.nonTransformedImageOutline, layer.appliedTransformations);
         //take the cropping shape
-        if (isPointInPolygon(canvasMousePosition, layer.croppingPolygon)) {
+        if (isPointInPolygon(canvasMousePosition, imageOutline)) {
             return layer;
         }
     }
     return currentActiveLayer;
-    
+
 }
 
 function handleMouseDownOnCanvas(e) {
