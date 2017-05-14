@@ -52,10 +52,20 @@ const g_steps = [
 // globalState
 //
 
+function buildRectangularCroppingPolyAroundImage(imageWidth, imageHeight) {
+    return [
+        {x: 0, y: 0},
+        {x: imageWidth, y: 0},
+        {x: imageWidth, y: imageHeight},
+        {x: 0, y: imageHeight}
+    ]
+
+}
+
 function newLayer(layerImage) {
     return {
-        croppingPolygon: null,
-        croppingPolygonInverseMatrix: null,//the inverse of the transformations applied at the time of drawing
+        croppingPolygon: buildRectangularCroppingPolyAroundImage(layerImage.width, layerImage.height),
+        croppingPolygonInverseMatrix: getIdentityMatrix(),//the inverse of the transformations applied at the time of drawing
         image: layerImage,
         appliedTransformations: getIdentityMatrix(),
         visable: true,
@@ -1448,7 +1458,9 @@ function getCurrentCanvasMousePosition(e) {
 function handleMouseUpCrop(mousePosition, activeLayer) {
     var area = calcPolygonArea(activeLayer.croppingPolygon);
     if (area < MIN_CROPPING_POLYGON_AREA) {
-        activeLayer.croppingPolygon = [];
+        var width = activeLayer.image.width;
+        var height = activeLayer.image.height;
+        activeLayer.croppingPolygon = buildRectangularCroppingPolyAroundImage(width, height);
     }
 }
 
