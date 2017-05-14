@@ -926,7 +926,7 @@ function drawClosingPolygon(ctx, inPoints, showFillEffect) {
         ctx.strokeStyle = 'rgba(255, 0, 0, 0.9)';
     }
     ctx.fill('evenodd'); //for firefox 31+, IE 11+, chrome
-    ctx.stroke();
+    //ctx.stroke();
 };
 
 
@@ -1172,8 +1172,8 @@ function cropCanvasImage(ctx, inPoints) {
         ctx.lineTo(currentPoint.x, currentPoint.y);
     }
     ctx.closePath();
-    ctx.strokeStyle = 'rgba(255,0,0,1.0)';
-    ctx.stroke();
+    // ctx.strokeStyle = 'rgba(255,0,0,1.0)';
+    // ctx.stroke();
 
     ctx.globalCompositeOperation = 'destination-in';
     ctx.fill('evenodd');
@@ -1227,19 +1227,22 @@ function drawUiLayer(canvasContext, transformationsMat, layers, currentLayer, is
     var keypointsToken1 = convertKeypointsToMatrixKeypoints(currentLayer.keypoints);
     var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, transformationsMat);
     var keypointsToken3 = convertMatrixKeypointsToKeypointObjects(keypointsToken2);
+
     //TODO: FILTER BASE ON CANVAS DIMENSIONS
     var imageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat)
     var keypointsToken4 = filterKeypointsOutsidePolygon(keypointsToken3, imageOutline);
+
     var idx = layers.indexOf(currentLayer);
     var layersOnTop = layers.slice(0,idx);
     var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layersOnTop);
+
     drawKeypoints(canvasContext, keypointsToken5);
 }
 
 function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
 
-    const imageCanvasContext = canvasState.imageLayerCanvas.getContext('2d');
-    const uiCanvasContext = canvasState.uiLayerCanvas.getContext('2d');
+    const imageCanvasContext = canvasState.imageLayerCanvasContext;
+    const uiCanvasContext = canvasState.uiLayerCanvasContext;
     var transfomationsMat;
     if (shouldApplyTemporaryTransformations) {
         transfomationsMat = matrixMultiply(temporaryTransformationsMat, layer.appliedTransformations);
@@ -1279,9 +1282,9 @@ function generateOutputList() {
 
 
 function drawLayers(canvasState, layers, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
-    var imageCanvasContext = canvasState.imageLayerCanvas.getContext('2d');
+    var imageCanvasContext = canvasState.imageLayerCanvasContext;
     paintCanvasWhite(imageCanvasContext);
-    var uiCanvasContext = canvasState.uiLayerCanvas.getContext('2d');
+    var uiCanvasContext = canvasState.uiLayerCanvasContext;
     uiCanvasContext.clearRect(0, 0, 400, 400);//fixme: hardcoded values
     for (var i = 0; i < layers.length; i++) {
         var idx = (layers.length - 1) - i;
@@ -1550,8 +1553,30 @@ function handleMouseMoveOnDocument(e) {
     }
 }
 
+function drawLayerImageOutline(ctx, imageOutlinePolygon) {
+    if (imageOutlinePolygon.length == 0) {
+        return;
+    }
+    ctx.beginPath();
+
+    ctx.moveTo(imageOutlinePolygon[0].x, imageOutlinePolygon[0].y);
+    for (var i = 1; i < imageOutlinePolygon.length; i++) {//i = 1 to skip first point
+        var currentPoint = imageOutlinePolygon[i];
+        ctx.lineTo(currentPoint.x, currentPoint.y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,0,0,1.0)';
+    ctx.stroke();
+}
+
 function handleMouseMoveOnCanvas(e) {
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
+
+    const layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, null);
+    if (layerUnderMouse) {
+        debugger;
+        drawLayerImageOutline(g_globalState.activeCanvas.uiLayerCanvasContext, layerUnderMouse.nonTransformedImageOutline);
+    }
 
     switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
@@ -1580,7 +1605,7 @@ function handleMouseDownCrop(activeLayer) {
     activeLayer.nonTransformedImageOutline = [];
 }
 
-function getActiveLayerWithCanvasPosition(canvasMousePosition, layers, currentActiveLayer) {
+function getActiveLayerWithCanvasPosition(canvasMousePosition, layers, noMatchReturnValue) {
 
     for (var i = 0; i < layers.length; i++) {
         var layer = layers[i];
@@ -1590,7 +1615,7 @@ function getActiveLayerWithCanvasPosition(canvasMousePosition, layers, currentAc
             return layer;
         }
     }
-    return currentActiveLayer;
+    return noMatchReturnValue;
 
 }
 
@@ -1652,8 +1677,10 @@ function buildCommonCanvasState(imageCanvasId, overlayCanvasId, preloadedImage) 
     var returnedCanvasState = newCanvasState();
     returnedCanvasState.uiLayerId = overlayCanvasId;
     returnedCanvasState.uiLayerCanvas = document.getElementById(overlayCanvasId);
+    returnedCanvasState.uiLayerCanvasContext = document.getElementById(overlayCanvasId).getContext('2d');
     returnedCanvasState.imageLayerId = imageCanvasId;
     returnedCanvasState.imageLayerCanvas = document.getElementById(imageCanvasId);
+    returnedCanvasState.imageLayerCanvasContext = document.getElementById(imageCanvasId).getContext('2d');
     returnedCanvasState.layers = [];
     returnedCanvasState.layers.push(newLayer(preloadedImage));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
