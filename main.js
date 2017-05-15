@@ -143,6 +143,10 @@ function getTransformedImageOutline(imageOutline, appliedTransformations) {
     return keypointsToken3
 }
 
+function applyTransformationToImageOutline(imageOutline, appliedTransformations) {
+    return getTransformedImageOutline(imageOutline, appliedTransformations);
+}
+
 function getIdentityTransformations() {
     var ret = {
         transformationCenterPoint: {
@@ -1370,6 +1374,14 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
         return;
     }
 
+    //FIXME: this is a lot of logic just for the image outline highlight
+    var canvasMousePosition = getCurrentCanvasMousePosition(e);
+    const layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, null);
+    if (layerUnderMouse) {
+        var imageOutline = applyTransformationToImageOutline(layerUnderMouse.nonTransformedImageOutline, layerUnderMouse.appliedTransformations);
+        draw();
+        drawLayerImageOutline(g_globalState.interactiveCanvasState.uiLayerCanvasContext, imageOutline);
+    }
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
     }
@@ -1565,18 +1577,14 @@ function drawLayerImageOutline(ctx, imageOutlinePolygon) {
         ctx.lineTo(currentPoint.x, currentPoint.y);
     }
     ctx.closePath();
-    ctx.strokeStyle = 'rgba(255,0,0,1.0)';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#2196F3';
     ctx.stroke();
 }
 
 function handleMouseMoveOnCanvas(e) {
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
 
-    const layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, null);
-    if (layerUnderMouse) {
-        debugger;
-        drawLayerImageOutline(g_globalState.activeCanvas.uiLayerCanvasContext, layerUnderMouse.nonTransformedImageOutline);
-    }
 
     switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
