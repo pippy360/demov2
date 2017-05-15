@@ -1381,8 +1381,6 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
         var imageOutline = applyTransformationToImageOutline(layerUnderMouse.nonTransformedImageOutline, layerUnderMouse.appliedTransformations);
         draw();
         drawLayerImageOutline(g_globalState.interactiveCanvasState.uiLayerCanvasContext, imageOutline);
-    } else {
-        debugger;
     }
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
@@ -1612,8 +1610,11 @@ function handleMouseMoveOnCanvas(e) {
 }
 
 function handleMouseDownCrop(activeLayer) {
+    //The nonTransformedImageOutline is never allowed to be an empty list
+    //so onMouseUp if the nonTransformedImageOutline is still empty then
+    //it is replaced with the outline of the image with no cropping
     debugger;
-    activeLayer.nonTransformedImageOutline = buildRect(activeLayer.image.width, activeLayer.image.height);
+    activeLayer.nonTransformedImageOutline = [];
 }
 
 function getActiveLayerWithCanvasPosition(canvasMousePosition, layers, noMatchReturnValue) {
@@ -1657,7 +1658,7 @@ function handleMouseDownOnCanvas(e) {
             //do nothing
             break;
         case enum_TransformationOperation.CROP:
-            handleMouseDownCrop(currentActiveLayer);
+            handleMouseDownCrop(clickedActiveLayer);
             break;
         default:
             console.log("ERROR: Invalid state.");
