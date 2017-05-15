@@ -1381,6 +1381,8 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
         var imageOutline = applyTransformationToImageOutline(layerUnderMouse.nonTransformedImageOutline, layerUnderMouse.appliedTransformations);
         draw();
         drawLayerImageOutline(g_globalState.interactiveCanvasState.uiLayerCanvasContext, imageOutline);
+    } else {
+        debugger;
     }
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
@@ -1610,7 +1612,8 @@ function handleMouseMoveOnCanvas(e) {
 }
 
 function handleMouseDownCrop(activeLayer) {
-    activeLayer.nonTransformedImageOutline = [];
+    debugger;
+    activeLayer.nonTransformedImageOutline = buildRect(activeLayer.image.width, activeLayer.image.height);
 }
 
 function getActiveLayerWithCanvasPosition(canvasMousePosition, layers, noMatchReturnValue) {
