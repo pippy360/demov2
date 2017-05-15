@@ -104,6 +104,7 @@ function newGlobalState() {
         interactiveCanvasState: null,
         isMouseDownAndClickedOnCanvas: null,
         temporaryAppliedTransformations: null,
+        transformationMatBeforeTemporaryTransformations: null,
         pageMouseDownPosition: null,
     };
 }
@@ -172,13 +173,6 @@ function wipeTemporaryAppliedTransformations() {
 
 function getActiveLayer(globalState) {
     return globalState.activeCanvas.activeLayer;
-}
-
-function applyTransformationToCurrentActiveTransformationMatrix(globalState) {
-    var layer = getActiveLayer(globalState);
-    var temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations);
-    layer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, layer.appliedTransformations);
-    //layer.appliedTransformations = matrixMultiply(layer.appliedTransformations, temporaryAppliedTransformationsMat);
 }
 
 function getReferenceImageTransformations() {
@@ -1199,6 +1193,18 @@ function cropLayerImage(canvasSize, transformedImage, croppingPolygon, transform
     return ctx.canvas;
 }
 
+function drawImageOutlineWithLayer(canvasContext, layer) {
+    var imageOutline = applyTransformationToImageOutline(layer.nonTransformedImageOutline, layer.appliedTransformations);
+    drawLayerImageOutline(canvasContext, imageOutline);
+}
+
+function drawImageOutlineWithMouseEvent(e, canvasContext, layers) {
+    var canvasMousePosition = getCurrentCanvasMousePosition(e);
+    const layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
+    if (layerUnderMouse) {
+        drawImageOutlineWithLayer(canvasContext, layerUnderMouse);
+    }
+}
 
 function isKeypointOccluded(keypoint, layers) {
     for (var i = 0; i < layers.length; i++) {
@@ -1239,26 +1245,21 @@ function drawUiLayer(canvasContext, transformationsMat, layers, currentLayer, is
     var keypointsToken4 = filterKeypointsOutsidePolygon(keypointsToken3, imageOutline);
 
     var idx = layers.indexOf(currentLayer);
-    var layersOnTop = layers.slice(0,idx);
+    var layersOnTop = layers.slice(0, idx);
     var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layersOnTop);
 
     drawKeypoints(canvasContext, keypointsToken5);
 }
 
-function drawLayerWithAppliedTransformations(canvasState, layer, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
+function drawLayerWithAppliedTransformations(canvasState, layer) {
 
     const imageCanvasContext = canvasState.imageLayerCanvasContext;
     const uiCanvasContext = canvasState.uiLayerCanvasContext;
-    var transfomationsMat;
-    if (shouldApplyTemporaryTransformations) {
-        transfomationsMat = matrixMultiply(temporaryTransformationsMat, layer.appliedTransformations);
-    } else {
-        transfomationsMat = layer.appliedTransformations;
-    }
     var canvasSize = {
         width: imageCanvasContext.canvas.width,
         height: imageCanvasContext.canvas.height
     };
+    var transfomationsMat = layer.appliedTransformations;
     var drawingImage = cropLayerImage(canvasSize, layer.image, layer.nonTransformedImageOutline, transfomationsMat);
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transfomationsMat);
     drawUiLayer(uiCanvasContext, transfomationsMat, canvasState.layers, layer);
@@ -1287,15 +1288,14 @@ function generateOutputList() {
 }
 
 
-function drawLayers(canvasState, layers, shouldApplyTemporaryTransformations, temporaryTransformationsMat) {
+function drawLayers(canvasState, layers, shouldApplyTemporaryTransformations) {
     var imageCanvasContext = canvasState.imageLayerCanvasContext;
     paintCanvasWhite(imageCanvasContext);
     var uiCanvasContext = canvasState.uiLayerCanvasContext;
     uiCanvasContext.clearRect(0, 0, 400, 400);//fixme: hardcoded values
     for (var i = 0; i < layers.length; i++) {
         var idx = (layers.length - 1) - i;
-        const applyTemporaryTransformations = shouldApplyTemporaryTransformations && layers[idx] == canvasState.activeLayer;
-        drawLayerWithAppliedTransformations(canvasState, layers[idx], applyTemporaryTransformations, temporaryTransformationsMat);
+        drawLayerWithAppliedTransformations(canvasState, layers[idx]);
     }
 }
 
@@ -1306,11 +1306,11 @@ function draw() {
     var layers;
     layers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
-    drawLayers(g_globalState.interactiveCanvasState, layers, isInteractiveCanvasActive, tempAppliedTransformationsMat);
+    drawLayers(g_globalState.interactiveCanvasState, layers, isInteractiveCanvasActive);
 
     var isReferenceCanvasActive = g_globalState.activeCanvas == g_globalState.referenceCanvasState;
     layers = g_globalState.referenceCanvasState.layers;
-    drawLayers(g_globalState.referenceCanvasState, layers, isReferenceCanvasActive, tempAppliedTransformationsMat);
+    drawLayers(g_globalState.referenceCanvasState, layers, isReferenceCanvasActive);
 
     // var referenceTransformedCroppingPoints1 = getTransformedCroppingPointsMatrix(g_referenceCanvasCroppingPolygonPoints, g_referenceCanvasCroppingPolygonInverseMatrix);
     // var referenceTransformedCroppingPoints2 = getTransformedCroppingPointsMatrix(referenceTransformedCroppingPoints1, referenceImageTransformations);
@@ -1348,6 +1348,10 @@ $(document).mousemove(function (e) {
         g_globalState.referenceImageHighlightedTriangle = null;
         handleMouseMoveOnDocument(e);
         draw();
+
+        var canvasContext = g_globalState.activeCanvas.imageOutlineLayerCanvasContext;
+        var layer = g_globalState.activeCanvas.activeLayer;
+        drawImageOutlineWithLayer(canvasContext, layer);
     }
 });
 
@@ -1376,13 +1380,10 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
         return;
     }
 
-    //FIXME: this is a lot of logic just for the image outline highlight
-    var canvasMousePosition = getCurrentCanvasMousePosition(e);
-    const layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, null);
-    if (layerUnderMouse) {
-        var imageOutline = applyTransformationToImageOutline(layerUnderMouse.nonTransformedImageOutline, layerUnderMouse.appliedTransformations);
-        drawLayerImageOutline(g_globalState.interactiveCanvasState.imageOutlineLayerCanvasContext, imageOutline);
-    }
+    const layers = g_globalState.interactiveCanvasState.layers;
+    const canvasContext = g_globalState.interactiveCanvasState.imageOutlineLayerCanvasContext;
+    drawImageOutlineWithMouseEvent(e, canvasContext, layers);
+
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
     }
@@ -1408,6 +1409,10 @@ $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousemove(function (e) {
     if (g_globalState == null || g_globalState.activeCanvas != g_globalState.referenceCanvasState) {
         return;
     }
+
+    const layers = g_globalState.referenceCanvasState.layers;
+    const canvasContext = g_globalState.referenceCanvasState.imageOutlineLayerCanvasContext;
+    drawImageOutlineWithMouseEvent(e, canvasContext, layers);
 
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
@@ -1464,7 +1469,6 @@ function handleMouseUp(e) {
         case enum_TransformationOperation.UNIFORM_SCALE:
         //No break, continue to next
         case enum_TransformationOperation.ROTATE:
-            applyTransformationToCurrentActiveTransformationMatrix(globalState);
             break;
         case enum_TransformationOperation.CROP:
             var activeLayer = g_globalState.activeCanvas.activeLayer;
@@ -1564,13 +1568,19 @@ function handleMouseMoveOnDocument(e) {
             console.log("ERROR: Invalid state.");
             break;
     }
+
+    var layer = getActiveLayer(globalState);
+    var temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations);
+    savedLayerMat = globalState.transformationMatBeforeTemporaryTransformations;
+    layer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, savedLayerMat);
 }
 
 function drawLayerImageOutline(ctx, imageOutlinePolygon) {
     if (imageOutlinePolygon.length == 0) {
         return;
     }
-    ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
+
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.beginPath();
 
     ctx.moveTo(imageOutlinePolygon[0].x, imageOutlinePolygon[0].y);
@@ -1615,7 +1625,6 @@ function handleMouseDownCrop(activeLayer) {
     //The nonTransformedImageOutline is never allowed to be an empty list
     //so onMouseUp if the nonTransformedImageOutline is still empty then
     //it is replaced with the outline of the image with no cropping
-    debugger;
     activeLayer.nonTransformedImageOutline = [];
 }
 
@@ -1639,12 +1648,13 @@ function handleMouseDownOnCanvas(e) {
 
     g_globalState.pageMouseDownPosition = pageMousePosition;
     g_globalState.temporaryAppliedTransformations.transformationCenterPoint = canvasMousePosition;
-
     //FIXME: set the active canvas
 
     const currentActiveLayer = g_globalState.activeCanvas.activeLayer;
     const clickedActiveLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, currentActiveLayer);
     g_globalState.activeCanvas.activeLayer = clickedActiveLayer;
+
+    g_globalState.transformationMatBeforeTemporaryTransformations = clickedActiveLayer.appliedTransformations;
 
     switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
