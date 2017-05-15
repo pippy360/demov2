@@ -1376,13 +1376,13 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 });
 
 $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
-    if (g_globalState == null || g_globalState.activeCanvas != g_globalState.interactiveCanvasState) {
-        return;
-    }
-
     const layers = g_globalState.interactiveCanvasState.layers;
     const canvasContext = g_globalState.interactiveCanvasState.imageOutlineLayerCanvasContext;
     drawImageOutlineWithMouseEvent(e, canvasContext, layers);
+
+    if (g_globalState == null || g_globalState.activeCanvas != g_globalState.interactiveCanvasState) {
+        return;
+    }
 
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
@@ -1406,13 +1406,13 @@ $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 });
 
 $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousemove(function (e) {
-    if (g_globalState == null || g_globalState.activeCanvas != g_globalState.referenceCanvasState) {
-        return;
-    }
-
     const layers = g_globalState.referenceCanvasState.layers;
     const canvasContext = g_globalState.referenceCanvasState.imageOutlineLayerCanvasContext;
     drawImageOutlineWithMouseEvent(e, canvasContext, layers);
+
+    if (g_globalState == null || g_globalState.activeCanvas != g_globalState.referenceCanvasState) {
+        return;
+    }
 
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
@@ -1689,12 +1689,6 @@ function applyTransformationEffects(state) {
 function setCurrnetOperation(newState) {
     g_globalState.currentTranformationOperationState = newState;
     applyTransformationEffects(newState);
-}
-
-function changeNumberOfKeypoints(newNumberOfKeypoints) {
-    g_numberOfKeypoints = newNumberOfKeypoints;
-    g_keypoints = generateRandomKeypoints({x: g_canvasImage.width, y: g_canvasImage.height}, g_numberOfKeypoints);
-    draw();
 }
 
 function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanvasId, preloadedImage) {
