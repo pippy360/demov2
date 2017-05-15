@@ -227,6 +227,11 @@
             position: absolute;
         }
 
+        .canvasClickThrough {
+            position: absolute;
+            pointer-events: none;
+        }
+
         .twoCanvasWrapper {
             width: 280px;
             height: 280px;
@@ -316,6 +321,7 @@
                         <canvas id="queryImageCanvasImageContent" class="canvasBottom" width="280"
                                 height="280"></canvas>
                         <canvas id="queryImageCanvasUiOverlay" class="canvasTop" width="280" height="280"></canvas>
+                        <canvas id="queryImageCanvasImageOutline" class="canvasClickThrough" width="280" height="280"></canvas>
                     </div>
                     <label class="triangleCountOutput" id="number_of_triangles_output"></label>
                 </div>
@@ -325,6 +331,7 @@
                         <canvas id="databaseImageCanvasImageContent" class="canvasBottom" width="280"
                                 height="280"></canvas>
                         <canvas id="databaseImageCanvasUiOverlay" class="canvasTop" width="280" height="280"></canvas>
+                        <canvas id="databaseImageCanvasImageOutline" class="canvasClickThrough" width="280" height="280"></canvas>
                     </div>
                     <label class="triangleCountOutput" id="number_of_matching_triangles_output"></label>
                 </div>

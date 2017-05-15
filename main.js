@@ -25,8 +25,10 @@ const g_targetTriangleScale = {
 };
 const INTERACTIVE_CANVAS_ID = "queryImageCanvasImageContent";
 const INTERACTIVE_CANVAS_OVERLAY_ID = "queryImageCanvasUiOverlay";
+const INTERACTIVE_CANVAS_IMAGE_OUTLINE_ID = "queryImageCanvasImageOutline";
 const REFERENCE_CANVAS_ID = "databaseImageCanvasImageContent";
 const REFERENCE_CANVAS_OVERLAY_ID = "databaseImageCanvasUiOverlay";
+const REFERENCE_CANVAS_IMAGE_OUTLINE_ID = "databaseImageCanvasImageOutline";
 
 var g_numberOfKeypoints = 30;
 const MIN_CROPPING_POLYGON_AREA = 600;
@@ -1379,8 +1381,7 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
     const layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, null);
     if (layerUnderMouse) {
         var imageOutline = applyTransformationToImageOutline(layerUnderMouse.nonTransformedImageOutline, layerUnderMouse.appliedTransformations);
-        draw();
-        drawLayerImageOutline(g_globalState.interactiveCanvasState.uiLayerCanvasContext, imageOutline);
+        drawLayerImageOutline(g_globalState.interactiveCanvasState.imageOutlineLayerCanvasContext, imageOutline);
     }
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
@@ -1569,6 +1570,7 @@ function drawLayerImageOutline(ctx, imageOutlinePolygon) {
     if (imageOutlinePolygon.length == 0) {
         return;
     }
+    ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
     ctx.beginPath();
 
     ctx.moveTo(imageOutlinePolygon[0].x, imageOutlinePolygon[0].y);
@@ -1685,14 +1687,21 @@ function changeNumberOfKeypoints(newNumberOfKeypoints) {
     draw();
 }
 
-function buildCommonCanvasState(imageCanvasId, overlayCanvasId, preloadedImage) {
+function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanvasId, preloadedImage) {
     var returnedCanvasState = newCanvasState();
+
     returnedCanvasState.uiLayerId = overlayCanvasId;
     returnedCanvasState.uiLayerCanvas = document.getElementById(overlayCanvasId);
     returnedCanvasState.uiLayerCanvasContext = document.getElementById(overlayCanvasId).getContext('2d');
+
     returnedCanvasState.imageLayerId = imageCanvasId;
     returnedCanvasState.imageLayerCanvas = document.getElementById(imageCanvasId);
     returnedCanvasState.imageLayerCanvasContext = document.getElementById(imageCanvasId).getContext('2d');
+
+    returnedCanvasState.imageOutlineLayerId = imageOutlineCanvasId;
+    returnedCanvasState.imageOutlineLayerCanvas = document.getElementById(imageOutlineCanvasId);
+    returnedCanvasState.imageOutlineLayerCanvasContext = document.getElementById(imageOutlineCanvasId).getContext('2d');
+
     returnedCanvasState.layers = [];
     returnedCanvasState.layers.push(newLayer(preloadedImage));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
@@ -1700,11 +1709,11 @@ function buildCommonCanvasState(imageCanvasId, overlayCanvasId, preloadedImage) 
 }
 
 function buildReferenceCanvasState() {
-    return buildCommonCanvasState(REFERENCE_CANVAS_ID, REFERENCE_CANVAS_OVERLAY_ID, _g_preloadImage);
+    return buildCommonCanvasState(REFERENCE_CANVAS_ID, REFERENCE_CANVAS_OVERLAY_ID, REFERENCE_CANVAS_IMAGE_OUTLINE_ID, _g_preloadImage);
 }
 
 function buildInteractiveCanvasState() {
-    return buildCommonCanvasState(INTERACTIVE_CANVAS_ID, INTERACTIVE_CANVAS_OVERLAY_ID, _g_preloadImage);
+    return buildCommonCanvasState(INTERACTIVE_CANVAS_ID, INTERACTIVE_CANVAS_OVERLAY_ID, INTERACTIVE_CANVAS_IMAGE_OUTLINE_ID, _g_preloadImage);
 }
 
 function buildGlobalState() {
