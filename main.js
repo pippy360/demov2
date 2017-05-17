@@ -1447,9 +1447,37 @@ function getCurrentCanvasMousePosition(e) {
 
 }
 
+function filterPointsOutsideImage(imageOutline, imageDimensions) {
+    var result = [];
+    for (var i = 0; i < imageOutline.length; i++) {
+        var point = imageOutline[i];
+        var x = point.x, y = point.y;
+        if (point.x < 0) {
+            x = 0;
+        }
+        if (point.x > imageDimensions.width) {
+            x = imageDimensions.width;
+        }
+        if (point.y < 0) {
+            y = 0;
+        }
+        if (point.y > imageDimensions.height) {
+            y = imageDimensions.height;
+        }
+        result.push( {x: x, y: y} );
+    }
+    return result;
+}
+
 function handleMouseUpCrop(mousePosition, activeLayer) {
-    activeLayer.nonTransformedImageOutline
-    //FIXME: get the area of the transformed poly!!!
+
+    var imageOutline = activeLayer.nonTransformedImageOutline;
+    var imageDimensions = {
+        width: activeLayer.image.width,
+        height: activeLayer.image.height
+    };
+    activeLayer.nonTransformedImageOutline = filterPointsOutsideImage(imageOutline, imageDimensions);
+
     var area = calcPolygonArea(activeLayer.nonTransformedImageOutline);
     if (area < MIN_CROPPING_POLYGON_AREA) {
         activeLayer.nonTransformedImageOutline = buildRectangularCroppingPolyFromLayer(activeLayer);
