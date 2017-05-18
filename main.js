@@ -1361,12 +1361,9 @@ $(document).mousedown(function (e) {
 $(document).mousemove(function (e) {
     if (g_globalState != null && g_globalState.isMouseDownAndClickedOnCanvas) {
         g_globalState.referenceImageHighlightedTriangle = null;
+        g_globalState.activeCanvas.imageOutlineHighlightLayer = g_globalState.activeCanvas.activeLayer;
         handleMouseMoveOnDocument(e);
         draw();
-
-        var canvasContext = g_globalState.activeCanvas.imageOutlineLayerCanvasContext;
-        var layer = g_globalState.activeCanvas.activeLayer;
-        drawImageOutlineWithLayer(canvasContext, layer);
     }
 });
 
