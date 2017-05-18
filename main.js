@@ -76,6 +76,7 @@ function buildRectangularCroppingPolyFromLayer(layer) {
 
 function newLayer(layerImage) {
     return {
+        //TODO FIXME: FILL THIS IN
         nonTransformedImageOutline: buildRect(layerImage.width, layerImage.height),
         image: layerImage,
         appliedTransformations: getIdentityMatrix(),
@@ -87,10 +88,7 @@ function newLayer(layerImage) {
 
 function newCanvasState() {
     return {
-        highlightedTriangle: null,
-        uiLayerId: "",
-        layers: [],
-        activeLayer: null
+        //TODO: FIXME: FILL THIS IN
     };
 }
 
@@ -1198,15 +1196,29 @@ function drawImageOutlineWithLayer(canvasContext, layer) {
     drawLayerImageOutline(canvasContext, imageOutline);
 }
 
-function drawImageOutlineWithMouseEvent(e, canvasContext, layers) {
-    var canvasMousePosition = getCurrentCanvasMousePosition(e);
-    const layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
-    if (layerUnderMouse) {
-        drawImageOutlineWithLayer(canvasContext, layerUnderMouse);
-    } else {
-        var canvas = canvasContext.canvas;
-        canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+
+function clearCanvasByContext(context) {
+    var canvas = context.canvas;
+    context.clearRect(0, 0, canvas.width, canvas.height);    
+}
+
+function drawImageOutlineInternal() {
+    
+    var referenceImageOutlineContext = g_globalState.referenceCanvasState.imageOutlineLayerCanvasContext;
+    var referenceLayerUnderMouse = g_globalState.referenceCanvasState.layerUnderMouse;
+    clearCanvasByContext(referenceImageOutlineContext);
+    if (referenceLayerUnderMouse != null) {
+        drawImageOutlineWithLayer(referenceImageOutlineContext, referenceLayerUnderMouse);
     }
+    
+    var interactiveImageOutlineContext = g_globalState.interactiveCanvasState.imageOutlineLayerCanvasContext;
+    var interactiveLayerUnderMouse = g_globalState.interactiveCanvasState.layerUnderMouse;
+    clearCanvasByContext(interactiveImageOutlineContext);
+    if (interactiveLayerUnderMouse != null) {
+        drawImageOutlineWithLayer(interactiveImageOutlineContext, interactiveLayerUnderMouse);
+    }
+    
+    window.requestAnimationFrame(drawImageOutlineInternal);
 }
 
 function isKeypointOccluded(keypoint, layers) {
@@ -1381,8 +1393,10 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
     const layers = g_globalState.interactiveCanvasState.layers;
     const canvasContext = g_globalState.interactiveCanvasState.imageOutlineLayerCanvasContext;
-    drawImageOutlineWithMouseEvent(e, canvasContext, layers);
-
+    
+    var canvasMousePosition = getCurrentCanvasMousePosition(e);
+    g_globalState.interactiveCanvasState.layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
+    
     if (g_globalState == null || g_globalState.activeCanvas != g_globalState.interactiveCanvasState) {
         return;
     }
@@ -1411,8 +1425,10 @@ $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousemove(function (e) {
     const layers = g_globalState.referenceCanvasState.layers;
     const canvasContext = g_globalState.referenceCanvasState.imageOutlineLayerCanvasContext;
-    drawImageOutlineWithMouseEvent(e, canvasContext, layers);
-
+    
+    var canvasMousePosition = getCurrentCanvasMousePosition(e);
+    g_globalState.interactiveCanvasState.layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
+    
     if (g_globalState == null || g_globalState.activeCanvas != g_globalState.referenceCanvasState) {
         return;
     }
@@ -1772,6 +1788,7 @@ function initAfterImageLoad() {
     g_globalState = buildGlobalState();
     setCurrnetOperation(enum_TransformationOperation.TRANSLATE);
     draw();
+    window.requestAnimationFrame(drawImageOutlineInternal);
 }
 
 function loadImageAndInit(imageSrc) {
