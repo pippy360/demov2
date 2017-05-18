@@ -1205,14 +1205,14 @@ function clearCanvasByContext(context) {
 function drawImageOutlineInternal() {
     
     var referenceImageOutlineContext = g_globalState.referenceCanvasState.imageOutlineLayerCanvasContext;
-    var referenceLayerUnderMouse = g_globalState.referenceCanvasState.layerUnderMouse;
+    var referenceLayerUnderMouse = g_globalState.referenceCanvasState.imageOutlineHighlightLayer;
     clearCanvasByContext(referenceImageOutlineContext);
     if (referenceLayerUnderMouse != null) {
         drawImageOutlineWithLayer(referenceImageOutlineContext, referenceLayerUnderMouse);
     }
     
     var interactiveImageOutlineContext = g_globalState.interactiveCanvasState.imageOutlineLayerCanvasContext;
-    var interactiveLayerUnderMouse = g_globalState.interactiveCanvasState.layerUnderMouse;
+    var interactiveLayerUnderMouse = g_globalState.interactiveCanvasState.imageOutlineHighlightLayer;
     clearCanvasByContext(interactiveImageOutlineContext);
     if (interactiveLayerUnderMouse != null) {
         drawImageOutlineWithLayer(interactiveImageOutlineContext, interactiveLayerUnderMouse);
@@ -1399,7 +1399,7 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
     const canvasContext = g_globalState.interactiveCanvasState.imageOutlineLayerCanvasContext;
     
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
-    g_globalState.interactiveCanvasState.layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
+    g_globalState.interactiveCanvasState.imageOutlineHighlightLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
     
     if (g_globalState == null || g_globalState.activeCanvas != g_globalState.interactiveCanvasState) {
         return;
@@ -1438,7 +1438,7 @@ $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousemove(function (e) {
     const canvasContext = g_globalState.referenceCanvasState.imageOutlineLayerCanvasContext;
     
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
-    g_globalState.interactiveCanvasState.layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
+    g_globalState.interactiveCanvasState.imageOutlineHighlightLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
     
     if (g_globalState == null || g_globalState.activeCanvas != g_globalState.referenceCanvasState) {
         return;
@@ -1767,6 +1767,8 @@ function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanv
     returnedCanvasState.imageOutlineLayerCanvas = document.getElementById(imageOutlineCanvasId);
     returnedCanvasState.imageOutlineLayerCanvasContext = document.getElementById(imageOutlineCanvasId).getContext('2d');
 
+    returnedCanvasState.imageOutlineHighlightLayer = null;//The layer with a blue outline around the image
+    
     returnedCanvasState.layers = [];
     returnedCanvasState.layers.push(newLayer(preloadedImage));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
