@@ -1391,6 +1391,10 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 });
 
 $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
+    if (g_globalState == null) {
+        return;
+    }
+    
     const layers = g_globalState.interactiveCanvasState.layers;
     const canvasContext = g_globalState.interactiveCanvasState.imageOutlineLayerCanvasContext;
     
@@ -1407,6 +1411,9 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
 });
 
 $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mouseup(function (e) {
+    if (g_globalState == null) {
+        return;
+    }
     //ignore
 });
 
@@ -1423,6 +1430,10 @@ $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousedown(function (e) {
 });
 
 $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousemove(function (e) {
+    if (g_globalState == null) {
+        return;
+    }
+    
     const layers = g_globalState.referenceCanvasState.layers;
     const canvasContext = g_globalState.referenceCanvasState.imageOutlineLayerCanvasContext;
     
@@ -1439,6 +1450,9 @@ $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousemove(function (e) {
 });
 
 $("#" + REFERENCE_CANVAS_OVERLAY_ID).mouseup(function (e) {
+    if (g_globalState == null) {
+        return;
+    }
     //ignore
 });
 
