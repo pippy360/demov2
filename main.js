@@ -1438,7 +1438,7 @@ $("#" + REFERENCE_CANVAS_OVERLAY_ID).mousemove(function (e) {
     const canvasContext = g_globalState.referenceCanvasState.imageOutlineLayerCanvasContext;
     
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
-    g_globalState.interactiveCanvasState.imageOutlineHighlightLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
+    g_globalState.referenceCanvasState.imageOutlineHighlightLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
     
     if (g_globalState == null || g_globalState.activeCanvas != g_globalState.referenceCanvasState) {
         return;
