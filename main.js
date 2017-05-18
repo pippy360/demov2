@@ -1203,6 +1203,9 @@ function drawImageOutlineWithMouseEvent(e, canvasContext, layers) {
     const layerUnderMouse = getActiveLayerWithCanvasPosition(canvasMousePosition, layers, null);
     if (layerUnderMouse) {
         drawImageOutlineWithLayer(canvasContext, layerUnderMouse);
+    } else {
+        var canvas = canvasContext.canvas;
+        canvasContext.clearRect(0, 0, canvas.width, canvas.height);
     }
 }
 
