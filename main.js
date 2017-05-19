@@ -1384,8 +1384,6 @@ function buildReferenceCanvasDrawingLayers(canvasDimensions, layers) {
         var associatedLayer = currentLayer.associatedLayer;
         var transformationMat = math.inv(associatedLayer.appliedTransformations);
         var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(associatedLayer.keypoints, transformationMat);
-        var appliedTransformations = math.inv(associatedLayer.appliedTransformations);
-        var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(associatedLayerVisableKeypoints, appliedTransformations);
         result.push(buildDrawingLayer(associatedLayerVisableKeypoints, null/*FIXME: computedTriangles */, currentLayer));
     }
 
