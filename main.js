@@ -1277,25 +1277,12 @@ function getNonOccludedKeypoints(keypoints, layers) {
 }
 
 //FIXME: clean up parameters
-function drawUiLayer(canvasContext, transformationsMat, layers, currentLayer, isActiveLayer) {
-    var canvasDimensions = {width: canvasContext.canvas.width, height: canvasContext.canvas.height};
-
-    var keypointsToken1 = convertKeypointsToMatrixKeypoints(currentLayer.keypoints);
-    var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, transformationsMat);
-    var keypointsToken3 = convertMatrixKeypointsToKeypointObjects(keypointsToken2);
-
-    //TODO: FILTER BASE ON CANVAS DIMENSIONS
-    var imageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat)
-    var keypointsToken4 = filterKeypointsOutsidePolygon(keypointsToken3, imageOutline);
-
-    var idx = layers.indexOf(currentLayer);
-    var layersOnTop = layers.slice(0, idx);
-    var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layersOnTop);
-
+function drawUiLayer(canvasContext, keypoints) {
     drawKeypoints(canvasContext, keypointsToken5);
+    //todo draw triangles
 }
 
-function drawLayerWithAppliedTransformations(canvasState, layer, dontCropImage) {
+function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage) {
 
     const imageCanvasContext = canvasState.imageLayerCanvasContext;
     const uiCanvasContext = canvasState.uiLayerCanvasContext;
@@ -1305,13 +1292,13 @@ function drawLayerWithAppliedTransformations(canvasState, layer, dontCropImage) 
     };
     var drawingImage;
     if (dontCropImage) {
-        drawingImage = layer.image;
+        drawingImage = drawingLayer.layer.image;
     } else {
-        drawingImage = cropLayerImage(canvasSize, layer.image, layer.nonTransformedImageOutline);
+        drawingImage = cropLayerImage(canvasSize, drawingLayer.layer.image, layer.nonTransformedImageOutline);
     }
     var transformationsMat = layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
-    drawUiLayer(uiCanvasContext, transformationsMat, canvasState.layers, layer);
+    drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints);
 }
 
 function generateOutputList() {
@@ -1346,6 +1333,44 @@ function drawCroppingEffect(canvasContext, imageOutline) {
     canvasContext.fill('evenodd');
 }
 
+var drawingLayer = {
+    transformedVisableKeypoints: null,    
+}
+
+function buildDrawingLayer(transformedVisableKeypoints, computedTriangles, layer) {
+    return {
+        layer: layer,
+        transformedVisableKeypoints: transformedVisableKeypoints,
+        computedTriangles: computedTriangles
+    }
+}
+
+//FIXME: comment this function!!
+function buildInteractiveCanvasDrawingLayers(canvasContext, layers) {
+    
+    var result = [];
+    var canvasDimensions = {width: canvasContext.canvas.width, height: canvasContext.canvas.height};//FIXME: replace with function
+
+    for (var i = 0; i < layers.length; i++) {
+        var currentLayer = layers[i];
+        var layersOnTop = layers.slice(0, i);
+
+        var transformationsMat = currentLayer.appliedTransformations;
+        var keypointsToken1 = convertKeypointsToMatrixKeypoints(currentLayer.keypoints);
+        var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, transformationsMat);
+        var keypointsToken3 = convertMatrixKeypointsToKeypointObjects(keypointsToken2);
+
+        //TODO: FILTER BASE ON CANVAS DIMENSIONS
+        var imageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat)
+        var keypointsToken4 = filterKeypointsOutsidePolygon(keypointsToken3, imageOutline);
+
+        var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layersOnTop);
+        result.push(buildDrawingLayer(keypointsToken5, null/*FIXME: computedTriangles */, layer));
+    }
+
+    return result;
+}
+
 function drawLayers(canvasState, layers) {
     var imageCanvasContext = canvasState.imageLayerCanvasContext;
     paintCanvasWhite(imageCanvasContext);
@@ -1356,15 +1381,16 @@ function drawLayers(canvasState, layers) {
     var isCrop = g_globalState.currentTranformationOperationState == enum_TransformationOperation.CROP;
     var isCroppingEffectActive = g_globalState.isMouseDownAndClickedOnCanvas && isCrop;
 
-    for (var i = 0; i < layers.length; i++) {
-        var idx = (layers.length - 1) - i;
-        var layer = layers[idx];
 
-        var isActiveLayer = canvasState.activeLayer == layer;
+    for (var i = 0; i < drawingLayers.length; i++) {
+        var idx = (drawingLayers.length - 1) - i;
+        var drawingLayer = drawingLayers[idx];
+
+        var isActiveLayer = canvasState.activeLayer == drawingLayer.layer;
         var dontCropImage = isActiveLayer && isCroppingEffectActive;
-
-        drawLayerWithAppliedTransformations(canvasState, layer, dontCropImage);
+        drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage);
     }
+
     if (isCroppingEffectActive) {
         var appliedTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
         var imageOutlineToken1 = g_globalState.activeCanvas.activeLayer.nonTransformedImageOutline;
@@ -1378,31 +1404,18 @@ function draw() {
 
     var tempAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(g_globalState.temporaryAppliedTransformations);
 
-    var layers;
-    layers = g_globalState.interactiveCanvasState.layers;
+
+    
+    var interactiveCanvasLayers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
-    drawLayers(g_globalState.interactiveCanvasState, layers, isInteractiveCanvasActive);
 
-    var isReferenceCanvasActive = g_globalState.activeCanvas == g_globalState.referenceCanvasState;
-    layers = g_globalState.referenceCanvasState.layers;
-    drawLayers(g_globalState.referenceCanvasState, layers, isReferenceCanvasActive);
+    var drawingLayers = buildInteractiveCanvasDrawingLayers(canvasState, interactiveCanvasLayers);
+    drawLayers(g_globalState.interactiveCanvasState, drawingLayers, isInteractiveCanvasActive);
 
-    // var referenceTransformedCroppingPoints1 = getTransformedCroppingPointsMatrix(g_referenceCanvasCroppingPolygonPoints, g_referenceCanvasCroppingPolygonInverseMatrix);
-    // var referenceTransformedCroppingPoints2 = getTransformedCroppingPointsMatrix(referenceTransformedCroppingPoints1, referenceImageTransformations);
-    //
-    // const temporaryAppliedTransformations = temporaryAppliedTransformations();
-    //
-    // var interactiveImageTransformations = getInteractiveImageTransformations();
-    //
-    // drawClosingPolygon(interactiveCanvasContext, interactiveTransformedCroppingPoints2, showFillEffect);
-    //
-    // if (g_shouldDrawUIOverlay) {
-    //     drawCanvasUiOverlay();
-    // }
-    //
-    // generateOutputList()
-    //
-    // //window.requestAnimationFrame(draw);
+    // var isReferenceCanvasActive = g_globalState.activeCanvas == g_globalState.referenceCanvasState;
+    // ReferenceCanvasLayers = g_globalState.referenceCanvasState.layers;
+
+    // drawLayers(g_globalState.referenceCanvasState, layers, isReferenceCanvasActive);
 }
 
 // #     #                         ###
