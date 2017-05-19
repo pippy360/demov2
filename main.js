@@ -1432,15 +1432,14 @@ function draw() {
     var interactiveCanvasLayers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
     var tempRet = buildInteractiveCanvasDrawingLayers(/*canvasDimensions*/null, interactiveCanvasLayers);
-    var drawingLayersByInteractiveImageLayer = tempRet[0];
-    var drawingLayers = tempRet[1];
-
-    drawLayers(g_globalState.interactiveCanvasState, drawingLayers, isInteractiveCanvasActive);
+    var interactiveImageDrawingLayersByInteractiveImageLayer = tempRet[0];
+    var interactiveImageDrawingLayers = tempRet[1];
+    drawLayers(g_globalState.interactiveCanvasState, interactiveImageDrawingLayers, isInteractiveCanvasActive);
 
     var referenceCanvasLayers = g_globalState.referenceCanvasState.layers;
     var isReferenceCanvasActive = g_globalState.activeCanvas == g_globalState.referenceCanvasState;
-    var drawingLayers = buildReferenceCanvasDrawingLayers(/*canvasDimensions*/null, referenceCanvasLayers, drawingLayersByInteractiveImageLayer);
-    drawLayers(g_globalState.referenceCanvasState, dr, drawingLayersByInteractiveImageLayerawingLayers, isReferenceCanvasActive);
+    var referenceImageDrawingLayers = buildReferenceCanvasDrawingLayers(/*canvasDimensions*/null, referenceCanvasLayers, interactiveImageDrawingLayersByInteractiveImageLayer);
+    drawLayers(g_globalState.referenceCanvasState, referenceImageDrawingLayers, isReferenceCanvasActive);
 }
 
 // #     #                         ###
