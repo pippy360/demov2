@@ -1355,6 +1355,7 @@ function buildDrawingLayer(transformedVisableKeypoints, computedTriangles, layer
 //FIXME: comment this function!!
 function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
     
+    var resultMap = new Map();
     var result = [];
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
@@ -1370,20 +1371,23 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
         var keypointsToken4 = filterKeypointsOutsidePolygon(keypointsToken3, imageOutline);
 
         var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layersOnTop);
+        resultMap.set(currentLayer, buildDrawingLayer(keypointsToken5, null/*FIXME: computedTriangles */, currentLayer));
         result.push(buildDrawingLayer(keypointsToken5, null/*FIXME: computedTriangles */, currentLayer));
     }
 
-    return result;
+    return resultMap, result;
 }
 
-function buildReferenceCanvasDrawingLayers(canvasDimensions, layers) {
+function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, associatedDisplayLayers, drawingLayersByInteractiveImageLayer) {
 
     var result = [];
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
-        var associatedLayer = currentLayer.associatedLayer;
         var transformationMat = math.inv(associatedLayer.appliedTransformations);
-        var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(associatedLayer.keypoints, transformationMat);
+        var associatedLayer = currentLayer.associatedLayer;
+        var interactiveImageDrawingLayer = drawingLayersByInteractiveImageLayer.get(associatedLayer);
+        var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(associatedLayer.transformedVisableKeypoints, transformationMat);
+ 
         result.push(buildDrawingLayer(associatedLayerVisableKeypoints, null/*FIXME: computedTriangles */, currentLayer));
     }
 
@@ -1427,13 +1431,14 @@ function draw() {
     
     var interactiveCanvasLayers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
-    var drawingLayers = buildInteractiveCanvasDrawingLayers(/*canvasDimensions*/null, interactiveCanvasLayers);
+    var drawingLayersByInteractiveImageLayer, drawingLayers = buildInteractiveCanvasDrawingLayers(/*canvasDimensions*/null, interactiveCanvasLayers);
+
     drawLayers(g_globalState.interactiveCanvasState, drawingLayers, isInteractiveCanvasActive);
 
     var referenceCanvasLayers = g_globalState.referenceCanvasState.layers;
     var isReferenceCanvasActive = g_globalState.activeCanvas == g_globalState.referenceCanvasState;
-    var drawingLayers = buildReferenceCanvasDrawingLayers(/*canvasDimensions*/null, referenceCanvasLayers);
-    drawLayers(g_globalState.referenceCanvasState, drawingLayers, isReferenceCanvasActive);
+    var drawingLayers = buildReferenceCanvasDrawingLayers(/*canvasDimensions*/null, referenceCanvasLayers, drawingLayersByInteractiveImageLayer);
+    drawLayers(g_globalState.referenceCanvasState, dr, drawingLayersByInteractiveImageLayerawingLayers, isReferenceCanvasActive);
 }
 
 // #     #                         ###
