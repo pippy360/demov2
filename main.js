@@ -1359,7 +1359,6 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
     var result = [];
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
-        var layersOnTop = layers.slice(0, i);
 
         var transformationsMat = currentLayer.appliedTransformations;
         var keypointsToken1 = applyTransformationMatrixToAllKeypointsObjects(currentLayer.keypoints, transformationsMat);
@@ -1368,6 +1367,7 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
         var imageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat)
         var keypointsToken2 = filterKeypointsOutsidePolygon(keypointsToken1, imageOutline);
 
+        var layersOnTop = layers.slice(0, i);
         var keypointsToken3 = getNonOccludedKeypoints(keypointsToken2, layersOnTop);
         resultMap.set(currentLayer, buildDrawingLayer(keypointsToken3, null/*FIXME: computedTriangles */, currentLayer));
         result.push(buildDrawingLayer(keypointsToken3, null/*FIXME: computedTriangles */, currentLayer));
@@ -1381,6 +1381,7 @@ function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, drawingLaye
     var result = [];
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
+
         var associatedLayer = currentLayer.associatedLayer;
         var transformationMat = math.inv(associatedLayer.appliedTransformations);
         var interactiveImageDrawingLayer = drawingLayersByInteractiveImageLayer.get(associatedLayer);
@@ -1394,6 +1395,7 @@ function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, drawingLaye
         var imageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat)
         var keypointsToken2 = filterKeypointsOutsidePolygon(keypointsToken1, imageOutline);
 
+        var layersOnTop = layers.slice(0, i);
         var keypointsToken3 = getNonOccludedKeypoints(keypointsToken2, layersOnTop);
         result.push(buildDrawingLayer(keypointsToken3, null/*FIXME: computedTriangles */, currentLayer));
     }
