@@ -1362,16 +1362,14 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
         var layersOnTop = layers.slice(0, i);
 
         var transformationsMat = currentLayer.appliedTransformations;
-        var keypointsToken1 = convertKeypointsToMatrixKeypoints(currentLayer.keypoints);
-        var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, transformationsMat);
-        var keypointsToken3 = convertMatrixKeypointsToKeypointObjects(keypointsToken2);
+        var keypointsToken1 = applyTransformationMatrixToAllKeypointsObjects(currentLayer.keypoints, transformationsMat);
 
         //TODO: FILTER BASE ON CANVAS DIMENSIONS
         var imageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat)
-        var keypointsToken4 = filterKeypointsOutsidePolygon(keypointsToken3, imageOutline);
+        var keypointsToken2 = filterKeypointsOutsidePolygon(keypointsToken1, imageOutline);
 
-        var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layersOnTop);
-        resultMap.set(currentLayer, buildDrawingLayer(keypointsToken5, null/*FIXME: computedTriangles */, currentLayer));
+        var keypointsToken3 = getNonOccludedKeypoints(keypointsToken2, layersOnTop);
+        resultMap.set(currentLayer, buildDrawingLayer(keypointsToken3, null/*FIXME: computedTriangles */, currentLayer));
         result.push(buildDrawingLayer(keypointsToken5, null/*FIXME: computedTriangles */, currentLayer));
     }
 
@@ -1388,7 +1386,16 @@ function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, drawingLaye
         var interactiveImageDrawingLayer = drawingLayersByInteractiveImageLayer.get(associatedLayer);
         var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(interactiveImageDrawingLayer.transformedVisableKeypoints, transformationMat);
  
-        result.push(buildDrawingLayer(associatedLayerVisableKeypoints, null/*FIXME: computedTriangles */, currentLayer));
+        //now recompute the keypoints FIXME: extract this to a function 
+        var transformationsMat = currentLayer.appliedTransformations;
+        var keypointsToken1 = applyTransformationMatrixToAllKeypointsObjects(associatedLayerVisableKeypoints, transformationsMat);
+
+        //TODO: FILTER BASE ON CANVAS DIMENSIONS
+        var imageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat)
+        var keypointsToken2 = filterKeypointsOutsidePolygon(keypointsToken1, imageOutline);
+
+        var keypointsToken3 = getNonOccludedKeypoints(keypointsToken2, layersOnTop);
+        result.push(buildDrawingLayer(keypointsToken3, null/*FIXME: computedTriangles */, currentLayer));
     }
 
     return result;
