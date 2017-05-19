@@ -1861,7 +1861,7 @@ function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanv
     
     returnedCanvasState.layers = [];
     //FIXME: reference image layers done have keypoints, they are computed from the associated interactive image layer
-    var keypoints = generateRandomKeypoints({width: layerImage.width, height: layerImage.height}, g_numberOfKeypoints)
+    var keypoints = generateRandomKeypoints({width: preloadedImage.width, height: preloadedImage.height}, g_numberOfKeypoints)
     returnedCanvasState.layers.push(newLayer(preloadedImage, keypoints));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
     return returnedCanvasState;
@@ -1918,7 +1918,7 @@ function _debug_addlayer(imageSrc) {
     image = new Image();
     image.src = imageSrc;
     image.onload = function () {
-        var keypoints = generateRandomKeypoints({width: layerImage.width, height: layerImage.height}, g_numberOfKeypoints);
+        var keypoints = generateRandomKeypoints({width: image.width, height: image.height}, g_numberOfKeypoints);
         var layer1 = newLayer(image, keypoints);
         var layer2 = newLayer(image, null);
         layer1.associatedLayer = layer2;
