@@ -579,7 +579,7 @@ function applyTransformationMatrixToAllKeypoints(keypoints, transformationMat) {
 
 function applyTransformationMatrixToAllKeypointsObjects(keypoints, transformationMat) {
     var keypointsToken1 = convertKeypointsToMatrixKeypoints(keypoints);
-    var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, transformationsMat);
+    var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, transformationMat);
     var keypointsToken3 = convertMatrixKeypointsToKeypointObjects(keypointsToken2);
     return keypointsToken3;
 }
