@@ -1370,7 +1370,7 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
     return result;
 }
 
-function drawLayers(canvasState, layers) {
+function drawLayers(canvasState, drawingLayers) {
     var imageCanvasContext = canvasState.imageLayerCanvasContext;
     paintCanvasWhite(imageCanvasContext);
     var uiCanvasContext = canvasState.uiLayerCanvasContext;
