@@ -1364,7 +1364,7 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
         var keypointsToken4 = filterKeypointsOutsidePolygon(keypointsToken3, imageOutline);
 
         var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layersOnTop);
-        result.push(buildDrawingLayer(keypointsToken5, null/*FIXME: computedTriangles */, layer));
+        result.push(buildDrawingLayer(keypointsToken5, null/*FIXME: computedTriangles */, currentLayer));
     }
 
     return result;
