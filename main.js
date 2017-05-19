@@ -1278,7 +1278,7 @@ function getNonOccludedKeypoints(keypoints, layers) {
 
 //FIXME: clean up parameters
 function drawUiLayer(canvasContext, keypoints) {
-    drawKeypoints(canvasContext, keypointsToken5);
+    drawKeypoints(canvasContext, keypoints);
     //todo draw triangles
 }
 
