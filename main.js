@@ -74,7 +74,7 @@ function buildRectangularCroppingPolyFromLayer(layer) {
 
 }
 
-function newLayer(layerImage) {
+function newLayer(layerImage, keypoints) {
     return {
         //TODO FIXME: FILL THIS IN
         nonTransformedImageOutline: buildRect(layerImage.width, layerImage.height),
@@ -82,7 +82,7 @@ function newLayer(layerImage) {
         appliedTransformations: getIdentityMatrix(),
         visible: true,
         layerColour: [0, 0, 0], //used for canvas UI overlay elements
-        keypoints: generateRandomKeypoints({width: layerImage.width, height: layerImage.height}, g_numberOfKeypoints)
+        keypoints: keypoints,
     };
 }
 
@@ -575,6 +575,13 @@ function applyTransformationMatrixToAllKeypoints(keypoints, transformationMat) {
         ret.push(transformedKeypoint);
     }
     return ret;
+}
+
+function applyTransformationMatrixToAllKeypointsObjects(keypoints, transformationMat) {
+    var keypointsToken1 = convertKeypointsToMatrixKeypoints(keypoints);
+    var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, transformationsMat);
+    var keypointsToken3 = convertMatrixKeypointsToKeypointObjects(keypointsToken2);
+    return keypointsToken3;
 }
 
 function convertSingleMatrixKeypoinToKeypointObject(arrayKeypoint) {
@@ -1349,7 +1356,6 @@ function buildDrawingLayer(transformedVisableKeypoints, computedTriangles, layer
 function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
     
     var result = [];
-
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
         var layersOnTop = layers.slice(0, i);
@@ -1365,6 +1371,22 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
 
         var keypointsToken5 = getNonOccludedKeypoints(keypointsToken4, layersOnTop);
         result.push(buildDrawingLayer(keypointsToken5, null/*FIXME: computedTriangles */, currentLayer));
+    }
+
+    return result;
+}
+
+function buildReferenceCanvasDrawingLayers(canvasDimensions, layers) {
+
+    var result = [];
+    for (var i = 0; i < layers.length; i++) {
+        var currentLayer = layers[i];
+        var associatedLayer = currentLayer.associatedLayer;
+        var transformationMat = math.inv(associatedLayer.appliedTransformations);
+        var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(associatedLayer.keypoints, transformationMat);
+        var appliedTransformations = math.inv(associatedLayer.appliedTransformations);
+        var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(associatedLayerVisableKeypoints, appliedTransformations);
+        result.push(buildDrawingLayer(associatedLayerVisableKeypoints, null/*FIXME: computedTriangles */, currentLayer));
     }
 
     return result;
@@ -1407,14 +1429,13 @@ function draw() {
     
     var interactiveCanvasLayers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
-
     var drawingLayers = buildInteractiveCanvasDrawingLayers(/*canvasDimensions*/null, interactiveCanvasLayers);
     drawLayers(g_globalState.interactiveCanvasState, drawingLayers, isInteractiveCanvasActive);
 
-    // var isReferenceCanvasActive = g_globalState.activeCanvas == g_globalState.referenceCanvasState;
-    // ReferenceCanvasLayers = g_globalState.referenceCanvasState.layers;
-
-    // drawLayers(g_globalState.referenceCanvasState, layers, isReferenceCanvasActive);
+    var referenceCanvasLayers = g_globalState.referenceCanvasState.layers;
+    var isReferenceCanvasActive = g_globalState.activeCanvas == g_globalState.referenceCanvasState;
+    var drawingLayers = buildReferenceCanvasDrawingLayers(/*canvasDimensions*/null, referenceCanvasLayers);
+    drawLayers(g_globalState.referenceCanvasState, drawingLayers, isReferenceCanvasActive);
 }
 
 // #     #                         ###
@@ -1839,7 +1860,9 @@ function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanv
     returnedCanvasState.imageOutlineHighlightLayer = null;//The layer with a blue outline around the image
     
     returnedCanvasState.layers = [];
-    returnedCanvasState.layers.push(newLayer(preloadedImage));
+    //FIXME: reference image layers done have keypoints, they are computed from the associated interactive image layer
+    var keypoints = generateRandomKeypoints({width: layerImage.width, height: layerImage.height}, g_numberOfKeypoints)
+    returnedCanvasState.layers.push(newLayer(preloadedImage, keypoints));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
     return returnedCanvasState;
 }
@@ -1857,6 +1880,10 @@ function buildGlobalState() {
 
     const referenceCanvasState = buildReferenceCanvasState();
     const interactiveCanvasState = buildInteractiveCanvasState();
+    
+    //FIXME: come up with a better way of handling associatedLayers 
+    referenceCanvasState.layers[0].associatedLayer = interactiveCanvasState.layers[0];
+    interactiveCanvasState.layers[0].associatedLayer = referenceCanvasState.layers[0];
 
     resultingGlobalState.activeCanvas = interactiveCanvasState;
     resultingGlobalState.referenceCanvasState = referenceCanvasState;
@@ -1891,7 +1918,13 @@ function _debug_addlayer(imageSrc) {
     image = new Image();
     image.src = imageSrc;
     image.onload = function () {
-        g_globalState.interactiveCanvasState.layers.push(newLayer(image));
+        var keypoints = generateRandomKeypoints({width: layerImage.width, height: layerImage.height}, g_numberOfKeypoints);
+        var layer1 = newLayer(image, keypoints);
+        var layer2 = newLayer(image, null);
+        layer1.associatedLayer = layer2;
+        layer2.associatedLayer = layer1;
+        g_globalState.interactiveCanvasState.layers.push(layer1);
+        g_globalState.referenceCanvasState.layers.push(layer2);
     };
 }
 
