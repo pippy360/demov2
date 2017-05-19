@@ -1296,7 +1296,7 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     } else {
         drawingImage = cropLayerImage(canvasSize, drawingLayer.layer.image, drawingLayer.layer.nonTransformedImageOutline);
     }
-    var transformationsMat = layer.appliedTransformations;
+    var transformationsMat = drawingLayer.layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
     drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints);
 }
