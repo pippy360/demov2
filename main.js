@@ -1294,7 +1294,7 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     if (dontCropImage) {
         drawingImage = drawingLayer.layer.image;
     } else {
-        drawingImage = cropLayerImage(canvasSize, drawingLayer.layer.image, layer.nonTransformedImageOutline);
+        drawingImage = cropLayerImage(canvasSize, drawingLayer.layer.image, drawingLayer.layer.nonTransformedImageOutline);
     }
     var transformationsMat = layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
