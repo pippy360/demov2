@@ -1354,7 +1354,7 @@ function drawLayers(canvasState, layers) {
 
     //check if a cropping effect needs to be applied
     var isCrop = g_globalState.currentTranformationOperationState == enum_TransformationOperation.CROP;
-    var isCroppingEffectActive = g_globalState.isMouseDownAndClickedOnCanvas && isCrop;//FIXME: BAD NAME
+    var isCroppingEffectActive = g_globalState.isMouseDownAndClickedOnCanvas && isCrop;
 
     for (var i = 0; i < layers.length; i++) {
         var idx = (layers.length - 1) - i;
