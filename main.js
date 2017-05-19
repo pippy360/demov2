@@ -1383,8 +1383,8 @@ function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, associatedD
     var result = [];
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
-        var transformationMat = math.inv(associatedLayer.appliedTransformations);
         var associatedLayer = currentLayer.associatedLayer;
+        var transformationMat = math.inv(associatedLayer.appliedTransformations);
         var interactiveImageDrawingLayer = drawingLayersByInteractiveImageLayer.get(associatedLayer);
         var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(associatedLayer.transformedVisableKeypoints, transformationMat);
  
