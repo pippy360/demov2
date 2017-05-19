@@ -1207,7 +1207,7 @@ function applyCroppingEffectToCanvas(ctx, inPoints) {
     drawPolygonPath(ctx, buildRect(ctx.canvas.width, ctx.canvas.height));
     drawPolygonPath(ctx, inPoints);
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
     ctx.fill('evenodd');
 }
 
@@ -1228,25 +1228,25 @@ function drawImageOutlineWithLayer(canvasContext, layer) {
 
 function clearCanvasByContext(context) {
     var canvas = context.canvas;
-    context.clearRect(0, 0, canvas.width, canvas.height);    
+    context.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawImageOutlineInternal() {
-    
+
     var referenceImageOutlineContext = g_globalState.referenceCanvasState.imageOutlineLayerCanvasContext;
     var referenceLayerUnderMouse = g_globalState.referenceCanvasState.imageOutlineHighlightLayer;
     clearCanvasByContext(referenceImageOutlineContext);
     if (referenceLayerUnderMouse != null) {
         drawImageOutlineWithLayer(referenceImageOutlineContext, referenceLayerUnderMouse);
     }
-    
+
     var interactiveImageOutlineContext = g_globalState.interactiveCanvasState.imageOutlineLayerCanvasContext;
     var interactiveLayerUnderMouse = g_globalState.interactiveCanvasState.imageOutlineHighlightLayer;
     clearCanvasByContext(interactiveImageOutlineContext);
     if (interactiveLayerUnderMouse != null) {
         drawImageOutlineWithLayer(interactiveImageOutlineContext, interactiveLayerUnderMouse);
     }
-    
+
     window.requestAnimationFrame(drawImageOutlineInternal);
 }
 
@@ -1295,7 +1295,7 @@ function drawUiLayer(canvasContext, transformationsMat, layers, currentLayer, is
     drawKeypoints(canvasContext, keypointsToken5);
 }
 
-function drawLayerWithAppliedTransformations(canvasState, layer, isCroppingEffectActive) {
+function drawLayerWithAppliedTransformations(canvasState, layer, dontCropImage) {
 
     const imageCanvasContext = canvasState.imageLayerCanvasContext;
     const uiCanvasContext = canvasState.uiLayerCanvasContext;
@@ -1303,16 +1303,15 @@ function drawLayerWithAppliedTransformations(canvasState, layer, isCroppingEffec
         width: imageCanvasContext.canvas.width,
         height: imageCanvasContext.canvas.height
     };
-    var transfomationsMat = layer.appliedTransformations;
-    var drawingImage = layer.image;
-    //debugger;
-    if (isCroppingEffectActive) {
-        drawingImage = cropLayerImage(canvasSize, layer.image, layer.nonTransformedImageOutline);
+    var drawingImage;
+    if (dontCropImage) {
+        drawingImage = layer.image;
     } else {
-        drawingImage = applyCroppingEffectToImage(canvasSize, layer.image, layer.nonTransformedImageOutline);
+        drawingImage = cropLayerImage(canvasSize, layer.image, layer.nonTransformedImageOutline);
     }
-    drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transfomationsMat);
-    drawUiLayer(uiCanvasContext, transfomationsMat, canvasState.layers, layer);
+    var transformationsMat = layer.appliedTransformations;
+    drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
+    drawUiLayer(uiCanvasContext, transformationsMat, canvasState.layers, layer);
 }
 
 function generateOutputList() {
@@ -1338,18 +1337,40 @@ function generateOutputList() {
 }
 
 
+function drawCroppingEffect(canvasContext, imageOutline) {
+    canvasContext.beginPath();
+    drawPolygonPath(canvasContext, buildRect(canvasContext.canvas.width, canvasContext.canvas.height));
+    drawPolygonPath(canvasContext, imageOutline);
+    canvasContext.globalCompositeOperation = 'source-over';
+    canvasContext.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    canvasContext.fill('evenodd');
+}
+
 function drawLayers(canvasState, layers) {
     var imageCanvasContext = canvasState.imageLayerCanvasContext;
     paintCanvasWhite(imageCanvasContext);
     var uiCanvasContext = canvasState.uiLayerCanvasContext;
-    uiCanvasContext.clearRect(0, 0, 400, 400);//fixme: hardcoded values
+    clearCanvasByContext(uiCanvasContext);
+
+    //check if a cropping effect needs to be applied
+    var isCrop = g_globalState.currentTranformationOperationState == enum_TransformationOperation.CROP;
+    var isCroppingEffectActive = g_globalState.isMouseDownAndClickedOnCanvas && isCrop;//FIXME: BAD NAME
+
     for (var i = 0; i < layers.length; i++) {
         var idx = (layers.length - 1) - i;
         var layer = layers[idx];
+
         var isActiveLayer = canvasState.activeLayer == layer;
-        var isCrop = g_globalState.currentTranformationOperationState == enum_TransformationOperation.CROP;
-        var isCroppingEffectActive = isActiveLayer && isCrop;
-        drawLayerWithAppliedTransformations(canvasState, layer, isCroppingEffectActive);
+        var dontCropImage = isActiveLayer && isCroppingEffectActive;
+
+        drawLayerWithAppliedTransformations(canvasState, layer, dontCropImage);
+    }
+    if (isCroppingEffectActive) {
+        var appliedTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
+        var imageOutlineToken1 = g_globalState.activeCanvas.activeLayer.nonTransformedImageOutline;
+        var transformedImageOutline = getTransformedImageOutline(imageOutlineToken1, appliedTransformations);
+        var canvasContext = g_globalState.activeCanvas.imageLayerCanvasContext;
+        drawCroppingEffect(canvasContext, transformedImageOutline);
     }
 }
 
