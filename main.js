@@ -1370,7 +1370,7 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
 
         var keypointsToken3 = getNonOccludedKeypoints(keypointsToken2, layersOnTop);
         resultMap.set(currentLayer, buildDrawingLayer(keypointsToken3, null/*FIXME: computedTriangles */, currentLayer));
-        result.push(buildDrawingLayer(keypointsToken5, null/*FIXME: computedTriangles */, currentLayer));
+        result.push(buildDrawingLayer(keypointsToken3, null/*FIXME: computedTriangles */, currentLayer));
     }
 
     return [resultMap, result];
