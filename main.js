@@ -1375,10 +1375,10 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
         result.push(buildDrawingLayer(keypointsToken5, null/*FIXME: computedTriangles */, currentLayer));
     }
 
-    return resultMap, result;
+    return [resultMap, result];
 }
 
-function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, associatedDisplayLayers, drawingLayersByInteractiveImageLayer) {
+function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, drawingLayersByInteractiveImageLayer) {
 
     var result = [];
     for (var i = 0; i < layers.length; i++) {
@@ -1431,7 +1431,9 @@ function draw() {
     
     var interactiveCanvasLayers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
-    var drawingLayersByInteractiveImageLayer, drawingLayers = buildInteractiveCanvasDrawingLayers(/*canvasDimensions*/null, interactiveCanvasLayers);
+    var tempRet = buildInteractiveCanvasDrawingLayers(/*canvasDimensions*/null, interactiveCanvasLayers);
+    var drawingLayersByInteractiveImageLayer = tempRet[0];
+    var drawingLayers = tempRet[1];
 
     drawLayers(g_globalState.interactiveCanvasState, drawingLayers, isInteractiveCanvasActive);
 
