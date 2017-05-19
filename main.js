@@ -1119,7 +1119,7 @@ function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas
     var keypoints = getKeypoints();
     var interactiveImageTransformedKeypoints = computeTransformedKeypoints(keypoints, interactiveImageTransformations);
 
-    var canvasDimenstions = {
+    var canvasDimensions = {
         x: canvasContext.canvas.width,
         y: canvasContext.canvas.height
     };
@@ -1150,7 +1150,7 @@ function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas
 
             var currentStep = g_steps[i];
             var tempFilteredReferenceImageTriangles = filterInvalidTriangles(trianglesProjectedOntoReferenceCanvas,
-                referenceCanvasDimenstions, currentStep.minPntDist, currentStep.maxPntDist, currentStep.minTriArea, referenceTransformedCroppingPoints2);
+                referenceCanvasDimensions, currentStep.minPntDist, currentStep.maxPntDist, currentStep.minTriArea, referenceTransformedCroppingPoints2);
 
             filteredReferenceImageTrianglesForAllSteps = filteredReferenceImageTrianglesForAllSteps.concat(tempFilteredReferenceImageTriangles);
         }
@@ -1352,6 +1352,32 @@ function buildDrawingLayer(transformedVisableKeypoints, computedTriangles, layer
     }
 }
 
+function filterPointsOutsideOfCanvas(keypoints, canvasDimensions) {
+    var ret = [];
+    for (var i = 0; i < keypoints.length; i++) {
+        var keypoint = keypoints[i];
+        if (keypoint.x >= canvasDimensions.width
+            || keypoint.x < 0
+            || keypoint.y >= canvasDimensions.height
+            || keypoint.y < 0) {
+            //ignore this keypoint
+        } else {
+            ret.push(keypoint)
+        }
+    }
+    return ret;
+}
+
+//FIXME: comment
+function filterKeypoints(keypoints, transformedImageOutline, transformationsMat, layersOnTop, canvasDimensions) {
+
+    var keypointsToken1 = applyTransformationMatrixToAllKeypointsObjects(keypoints, transformationsMat);
+    var keypointsToken2 = filterKeypointsOutsidePolygon(keypointsToken1, transformedImageOutline);
+    var keypointsToken3 = getNonOccludedKeypoints(keypointsToken2, layersOnTop);
+    var keypointsToken4 = filterPointsOutsideOfCanvas(keypointsToken3, canvasDimensions);
+    return keypointsToken3;
+}
+
 //FIXME: comment this function!!
 function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
     
@@ -1359,18 +1385,13 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
     var result = [];
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
-
-        var transformationsMat = currentLayer.appliedTransformations;
-        var keypointsToken1 = applyTransformationMatrixToAllKeypointsObjects(currentLayer.keypoints, transformationsMat);
-
-        //TODO: FILTER BASE ON CANVAS DIMENSIONS
-        var imageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat)
-        var keypointsToken2 = filterKeypointsOutsidePolygon(keypointsToken1, imageOutline);
-
+        
+        var transformedImageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat);
         var layersOnTop = layers.slice(0, i);
-        var keypointsToken3 = getNonOccludedKeypoints(keypointsToken2, layersOnTop);
-        resultMap.set(currentLayer, buildDrawingLayer(keypointsToken3, null/*FIXME: computedTriangles */, currentLayer));
-        result.push(buildDrawingLayer(keypointsToken3, null/*FIXME: computedTriangles */, currentLayer));
+        var filteredKeypoints = filterKeypoints(currentLayer.keypoints, transformedImageOutline, currentLayer.appliedTransformations, layersOnTop, canvasDimensions);
+        
+        resultMap.set(currentLayer, buildDrawingLayer(filteredKeypoints, null/*FIXME: computedTriangles */, currentLayer));
+        result.push(buildDrawingLayer(filteredKeypoints, null/*FIXME: computedTriangles */, currentLayer));
     }
 
     return [resultMap, result];
@@ -1387,17 +1408,11 @@ function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, drawingLaye
         var interactiveImageDrawingLayer = drawingLayersByInteractiveImageLayer.get(associatedLayer);
         var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(interactiveImageDrawingLayer.transformedVisableKeypoints, transformationMat);
  
-        //now recompute the keypoints FIXME: extract this to a function 
-        var transformationsMat = currentLayer.appliedTransformations;
-        var keypointsToken1 = applyTransformationMatrixToAllKeypointsObjects(associatedLayerVisableKeypoints, transformationsMat);
-
-        //TODO: FILTER BASE ON CANVAS DIMENSIONS
-        var imageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat)
-        var keypointsToken2 = filterKeypointsOutsidePolygon(keypointsToken1, imageOutline);
-
+        var transformedImageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat);
         var layersOnTop = layers.slice(0, i);
-        var keypointsToken3 = getNonOccludedKeypoints(keypointsToken2, layersOnTop);
-        result.push(buildDrawingLayer(keypointsToken3, null/*FIXME: computedTriangles */, currentLayer));
+        var filteredKeypoints = filterKeypoints(associatedLayerVisableKeypoints, transformedImageOutline, currentLayer.appliedTransformations, layersOnTop, canvasDimensions);
+        
+        result.push(buildDrawingLayer(filteredKeypoints, null/*FIXME: computedTriangles */, currentLayer));
     }
 
     return result;
@@ -1440,7 +1455,7 @@ function draw() {
     
     var interactiveCanvasLayers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
-    var tempRet = buildInteractiveCanvasDrawingLayers(/*canvasDimensions*/null, interactiveCanvasLayers);
+    var tempRet = buildInteractiveCanvasDrawingLayers(g_globalState.activeCanvas.interactiveCanvas, interactiveCanvasLayers);
     var interactiveImageDrawingLayersByInteractiveImageLayer = tempRet[0];
     var interactiveImageDrawingLayers = tempRet[1];
     drawLayers(g_globalState.interactiveCanvasState, interactiveImageDrawingLayers, isInteractiveCanvasActive);
