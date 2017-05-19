@@ -1346,10 +1346,9 @@ function buildDrawingLayer(transformedVisableKeypoints, computedTriangles, layer
 }
 
 //FIXME: comment this function!!
-function buildInteractiveCanvasDrawingLayers(canvasContext, layers) {
+function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
     
     var result = [];
-    var canvasDimensions = {width: canvasContext.canvas.width, height: canvasContext.canvas.height};//FIXME: replace with function
 
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
@@ -1409,7 +1408,7 @@ function draw() {
     var interactiveCanvasLayers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
 
-    var drawingLayers = buildInteractiveCanvasDrawingLayers(canvasState, interactiveCanvasLayers);
+    var drawingLayers = buildInteractiveCanvasDrawingLayers(/*canvasDimensions*/null, interactiveCanvasLayers);
     drawLayers(g_globalState.interactiveCanvasState, drawingLayers, isInteractiveCanvasActive);
 
     // var isReferenceCanvasActive = g_globalState.activeCanvas == g_globalState.referenceCanvasState;
