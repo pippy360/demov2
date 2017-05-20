@@ -862,9 +862,6 @@ function drawTriangleWithColour(ctx, tri, strokeColour, fillColour) {
     ctx.lineTo(tri[1].x, tri[1].y);
     ctx.lineTo(tri[2].x, tri[2].y);
     ctx.closePath();
-    if (g_enableFillEffect) {
-        ctx.fill();
-    }
     ctx.stroke();
 }
 
@@ -1287,6 +1284,14 @@ function getNonOccludedKeypoints(keypoints, layers) {
 //FIXME: clean up parameters
 function drawUiLayer(canvasContext, keypoints) {
     drawKeypoints(canvasContext, keypoints);
+    var interactiveTrianglesForAllSteps = [];
+    for (var i = 0; i < g_steps.length; i++) {
+        var currentStep = g_steps[i];
+        var tempTriangles = computeTriangles(keypoints, currentStep.maxPntDist, currentStep.minPntDist, currentStep.minTriArea);
+        interactiveTrianglesForAllSteps = interactiveTrianglesForAllSteps.concat(tempTriangles);
+    }
+
+    drawTriangles(canvasContext, interactiveTrianglesForAllSteps);
     //todo draw triangles
 }
 
@@ -1466,6 +1471,7 @@ function draw() {
     var canvasDimensions = g_globalState.referenceCanvasState.imageLayerCanvasContext.canvas;
     var referenceImageDrawingLayers = buildReferenceCanvasDrawingLayers(canvasDimensions, referenceCanvasLayers, interactiveImageDrawingLayersByInteractiveImageLayer);
     drawLayers(g_globalState.referenceCanvasState, referenceImageDrawingLayers, isReferenceCanvasActive);
+
 }
 
 // #     #                         ###
