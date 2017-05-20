@@ -838,14 +838,6 @@ function drawBackgroudImageWithTransformationMatrix(canvasContext, image, transf
     canvasContext.restore();
 }
 
-function drawBackgroupImage(canvasContext, image) {
-    canvasContext.save();
-    //canvasContext.translate(-image.width / 2, -image.height / 2);
-    canvasContext.drawImage(image, 0, 0)//, 512/2, 512/2);
-    canvasContext.restore();
-}
-
-
 function drawLineFromPointToMousePosition(ctx) {
     // ctx.save();
     // drawLine(mouseDownPoint, mouseCurrentPoint);
@@ -1195,9 +1187,9 @@ function getTemporaryCanvasContext(canvasSize) {
     return ctx;
 }
 
-function cropLayerImage(canvasSize, transformedImage, croppingPolygon) {
+function cropLayerImage(transformedImage, croppingPolygon) {
 
-    var ctx = getTemporaryCanvasContext(canvasSize);
+    var ctx = getTemporaryCanvasContext(transformedImage);
     ctx.drawImage(transformedImage, 0, 0);
 
     cropCanvasImage(ctx, croppingPolygon);
@@ -1299,15 +1291,12 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
 
     const imageCanvasContext = canvasState.imageLayerCanvasContext;
     const uiCanvasContext = canvasState.uiLayerCanvasContext;
-    var canvasSize = {
-        width: imageCanvasContext.canvas.width,
-        height: imageCanvasContext.canvas.height
-    };
+
     var drawingImage;
     if (dontCropImage) {
         drawingImage = drawingLayer.layer.image;
     } else {
-        drawingImage = cropLayerImage(canvasSize, drawingLayer.layer.image, drawingLayer.layer.nonTransformedImageOutline);
+        drawingImage = cropLayerImage(drawingLayer.layer.image, drawingLayer.layer.nonTransformedImageOutline);
     }
     var transformationsMat = drawingLayer.layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
@@ -1446,7 +1435,6 @@ function drawLayers(canvasState, drawingLayers) {
     }
 
     if (isCroppingEffectActive) {
-        debugger;
         var appliedTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
         var imageOutlineToken1 = g_globalState.activeCanvas.activeLayer.nonTransformedImageOutline;
         var transformedImageOutline = getTransformedImageOutline(imageOutlineToken1, appliedTransformations);
