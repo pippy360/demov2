@@ -1115,6 +1115,7 @@ function paintCanvasWhite(canvasContext) {
     canvasContext.fillRect(0, 0, canvas.width, canvas.height); // clear canvas
 }
 
+//FIXME: remove this
 function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas) {
     var keypoints = getKeypoints();
     var interactiveImageTransformedKeypoints = computeTransformedKeypoints(keypoints, interactiveImageTransformations);
@@ -1375,7 +1376,7 @@ function filterKeypoints(keypoints, transformedImageOutline, transformationsMat,
     var keypointsToken2 = filterKeypointsOutsidePolygon(keypointsToken1, transformedImageOutline);
     var keypointsToken3 = getNonOccludedKeypoints(keypointsToken2, layersOnTop);
     var keypointsToken4 = filterPointsOutsideOfCanvas(keypointsToken3, canvasDimensions);
-    return keypointsToken3;
+    return keypointsToken4;
 }
 
 //FIXME: comment this function!!
