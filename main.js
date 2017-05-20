@@ -1386,7 +1386,7 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
         
-        var transformedImageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat);
+        var transformedImageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, currentLayer.appliedTransformations);
         var layersOnTop = layers.slice(0, i);
         var filteredKeypoints = filterKeypoints(currentLayer.keypoints, transformedImageOutline, currentLayer.appliedTransformations, layersOnTop, canvasDimensions);
         
@@ -1408,7 +1408,7 @@ function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, drawingLaye
         var interactiveImageDrawingLayer = drawingLayersByInteractiveImageLayer.get(associatedLayer);
         var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(interactiveImageDrawingLayer.transformedVisableKeypoints, transformationMat);
  
-        var transformedImageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, transformationsMat);
+        var transformedImageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, currentLayer.appliedTransformations);
         var layersOnTop = layers.slice(0, i);
         var filteredKeypoints = filterKeypoints(associatedLayerVisableKeypoints, transformedImageOutline, currentLayer.appliedTransformations, layersOnTop, canvasDimensions);
         
@@ -1433,12 +1433,14 @@ function drawLayers(canvasState, drawingLayers) {
         var idx = (drawingLayers.length - 1) - i;
         var drawingLayer = drawingLayers[idx];
 
+        var isActiveCanvas = g_globalState.activeCanvas == canvasState;
         var isActiveLayer = canvasState.activeLayer == drawingLayer.layer;
-        var dontCropImage = isActiveLayer && isCroppingEffectActive;
+        var dontCropImage = isActiveLayer && isCroppingEffectActive && isActiveCanvas;
         drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage);
     }
 
     if (isCroppingEffectActive) {
+        debugger;
         var appliedTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
         var imageOutlineToken1 = g_globalState.activeCanvas.activeLayer.nonTransformedImageOutline;
         var transformedImageOutline = getTransformedImageOutline(imageOutlineToken1, appliedTransformations);
@@ -1451,18 +1453,17 @@ function draw() {
 
     var tempAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(g_globalState.temporaryAppliedTransformations);
 
-
-    
     var interactiveCanvasLayers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
-    var tempRet = buildInteractiveCanvasDrawingLayers(g_globalState.activeCanvas.interactiveCanvas, interactiveCanvasLayers);
+    var tempRet = buildInteractiveCanvasDrawingLayers(g_globalState.activeCanvas.imageLayerCanvas, interactiveCanvasLayers);
     var interactiveImageDrawingLayersByInteractiveImageLayer = tempRet[0];
     var interactiveImageDrawingLayers = tempRet[1];
     drawLayers(g_globalState.interactiveCanvasState, interactiveImageDrawingLayers, isInteractiveCanvasActive);
 
     var referenceCanvasLayers = g_globalState.referenceCanvasState.layers;
     var isReferenceCanvasActive = g_globalState.activeCanvas == g_globalState.referenceCanvasState;
-    var referenceImageDrawingLayers = buildReferenceCanvasDrawingLayers(/*canvasDimensions*/null, referenceCanvasLayers, interactiveImageDrawingLayersByInteractiveImageLayer);
+    var canvasDimensions = g_globalState.referenceCanvasState.imageLayerCanvasContext.canvas;
+    var referenceImageDrawingLayers = buildReferenceCanvasDrawingLayers(canvasDimensions, referenceCanvasLayers, interactiveImageDrawingLayersByInteractiveImageLayer);
     drawLayers(g_globalState.referenceCanvasState, referenceImageDrawingLayers, isReferenceCanvasActive);
 }
 
