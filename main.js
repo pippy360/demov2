@@ -792,14 +792,16 @@ function highlightTriangle(layerIndex, triangleIndex) {
     var layerTriangleMap = g_globalState.outputListState.triangleMapArray[layerIndex];
     var triangleStruct = layerTriangleMap.get(triangleIndex);
 
-    var interactiveCanvasContext = g_globalState.interactiveCanvasState.highlightedTriangleLayerCanvasContext;
-    var referenceCanvasContext = g_globalState.referenceCanvasState.highlightedTriangleLayerCanvasContext;
+    var interactiveHighlightedCanvasContext = g_globalState.interactiveCanvasState.highlightedTriangleLayerCanvasContext;
+    var referenceHighlightedCanvasContext = g_globalState.referenceCanvasState.highlightedTriangleLayerCanvasContext;
 
     //draw the outline of the triangle on the original canvas
     var enableFill = true;
-    drawTriangleWithColour(referenceCanvasContext, triangleStruct.referenceTriangle,
+    clearCanvasByContext(interactiveHighlightedCanvasContext);
+    drawTriangleWithColour(interactiveHighlightedCanvasContext, triangleStruct.interactiveTriangle,
         [255, 255, 255], [24, 61, 78], enableFill);
-    drawTriangleWithColour(interactiveCanvasContext, triangleStruct.interactiveTriangle,
+    clearCanvasByContext(referenceHighlightedCanvasContext);
+    drawTriangleWithColour(referenceHighlightedCanvasContext, triangleStruct.referenceTriangle,
         [255, 255, 255], [24, 61, 78], enableFill);
 
 
