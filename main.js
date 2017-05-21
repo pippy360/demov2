@@ -989,18 +989,34 @@ function checkIfAllPointsInPolygon(triangle, croppingPointsPoly) {
     return true;
 }
 
-function filterInvalidTriangles(triangles, canvasDimensions, minPntDist, maxPntDist, minTriArea, croppingPointsPoly) {
+function isValidKeypoints(currentKeypoint, validKeypoints) {
+    for (var i = 0; i < validKeypoints.length; i++) {
+        var validKeypoint = validKeypoints[i];
+        if(getEuclideanDistance(validKeypoint, currentKeypoint) < 1.0){
+            return true;
+        }
+    }
+    return false;
+}
+
+function areAllKeypointsValid(triangle, validKeypoints) {
+    for (var j = 0; j < triangle.length; j++) {
+        var currentKeypoint = triangle[j];
+        if (isValidKeypoints(currentKeypoint, validKeypoints)){
+
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+function filterInvalidTriangles(triangles, validKeypoints, minPntDist, maxPntDist, minTriArea) {
     var ret = [];
     for (var i = 0; i < triangles.length; i++) {
         var triangle = triangles[i];
 
-        if (isAnyPointsOutsideCanvas(triangle, canvasDimensions)) {
-            //Invalid triangle, ignore
-            continue;
-        }
-
-        //check closing poly
-        if (croppingPointsPoly.length > 0 && !checkIfAllPointsInPolygon(triangle, croppingPointsPoly)) {
+        if (!areAllKeypointsValid(triangle, validKeypoints)) {
             continue;
         }
 
@@ -1099,7 +1115,7 @@ function paintCanvasWhite(canvasContext) {
 }
 
 //FIXME: all this code sucks
-function filterInvalidTrianglesForAllSteps(triangles, canvasDimensions, imageOutline) {
+function filterInvalidTrianglesForAllSteps(triangles, validKeypoints) {
     var filteredReferenceImageTrianglesForAllSteps = [];
     for (var i = 0; i < g_steps.length; i++) {
 
@@ -1107,7 +1123,7 @@ function filterInvalidTrianglesForAllSteps(triangles, canvasDimensions, imageOut
 
         var currentStep = g_steps[i];
         var tempFilteredReferenceImageTriangles = filterInvalidTriangles(triangles,
-            canvasDimensions, currentStep.minPntDist, currentStep.maxPntDist, currentStep.minTriArea, imageOutline);
+            validKeypoints, currentStep.minPntDist, currentStep.maxPntDist, currentStep.minTriArea);
 
         filteredReferenceImageTrianglesForAllSteps = filteredReferenceImageTrianglesForAllSteps.concat(tempFilteredReferenceImageTriangles);
     }
@@ -1367,10 +1383,10 @@ function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, drawingLaye
         var nonTransformedTriangles = applyTransformationToTriangles(interactiveImageDrawingLayer.computedTriangles, transformationMat);
         var transformedTriangles = applyTransformationToTriangles(nonTransformedTriangles, currentLayer.appliedTransformations);
         var transformedImageOutline = applyTransformationToImageOutline(currentLayer.nonTransformedImageOutline, currentLayer.appliedTransformations);
-        var filteredTriangles = filterInvalidTrianglesForAllSteps(transformedTriangles, canvasDimensions, transformedImageOutline);
         var layersOnTop = layers.slice(0, i);
         var filteredKeypoints = filterKeypoints(associatedLayerVisableKeypoints, transformedImageOutline, currentLayer.appliedTransformations, layersOnTop, canvasDimensions);
-        
+        var filteredTriangles = filterInvalidTrianglesForAllSteps(transformedTriangles, filteredKeypoints);
+
         result.push(buildDrawingLayer(filteredKeypoints, filteredTriangles, currentLayer));
     }
 
