@@ -29,11 +29,13 @@ const INTERACTIVE_CANVAS_ID = "queryImageCanvasImageContent";
 const INTERACTIVE_CANVAS_OVERLAY_ID = "queryImageCanvasUiOverlay";
 const INTERACTIVE_CANVAS_IMAGE_OUTLINE_ID = "queryImageCanvasImageOutline";
 const INTERACTIVE_FRAGMENT_CANVAS_ID = "fragmentCanvas1";
+const INTERACTIVE_HIGHLIGHTED_CANVAS_ID = "queryImageCanvasHighlightedTriangle";
 
 const REFERENCE_CANVAS_ID = "databaseImageCanvasImageContent";
 const REFERENCE_CANVAS_OVERLAY_ID = "databaseImageCanvasUiOverlay";
 const REFERENCE_CANVAS_IMAGE_OUTLINE_ID = "databaseImageCanvasImageOutline";
 const REFERENCE_FRAGMENT_CANVAS_ID = "fragmentCanvas2";
+const REFERENCE_HIGHLIGHTED_CANVAS_ID = "databaseImageCanvasHighlightedTriangle";
 
 var g_numberOfKeypoints = 4;
 const MIN_CROPPING_POLYGON_AREA = 600;
@@ -790,8 +792,8 @@ function highlightTriangle(layerIndex, triangleIndex) {
     var layerTriangleMap = g_globalState.outputListState.triangleMapArray[layerIndex];
     var triangleStruct = layerTriangleMap.get(triangleIndex);
 
-    var interactiveCanvasContext = g_globalState.interactiveCanvasState.uiLayerCanvasContext;
-    var referenceCanvasContext = g_globalState.referenceCanvasState.uiLayerCanvasContext;
+    var interactiveCanvasContext = g_globalState.interactiveCanvasState.highlightedTriangleLayerCanvasContext;
+    var referenceCanvasContext = g_globalState.referenceCanvasState.highlightedTriangleLayerCanvasContext;
 
     //draw the outline of the triangle on the original canvas
     var enableFill = true;
@@ -1860,7 +1862,9 @@ function setCurrnetOperation(newState) {
     applyTransformationEffects(newState);
 }
 
-function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanvasId, fragmentCanvasId, preloadedImage) {
+function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanvasId, fragmentCanvasId,
+                                highlightedTriangleLayerId, preloadedImage)
+{
     var returnedCanvasState = newCanvasState();
 
     returnedCanvasState.uiLayerId = overlayCanvasId;
@@ -1874,6 +1878,10 @@ function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanv
     returnedCanvasState.imageOutlineLayerId = imageOutlineCanvasId;
     returnedCanvasState.imageOutlineLayerCanvas = document.getElementById(imageOutlineCanvasId);
     returnedCanvasState.imageOutlineLayerCanvasContext = document.getElementById(imageOutlineCanvasId).getContext('2d');
+
+    returnedCanvasState.highlightedTriangleLayerId = highlightedTriangleLayerId;
+    returnedCanvasState.highlightedTriangleLayerCanvas = document.getElementById(highlightedTriangleLayerId);
+    returnedCanvasState.highlightedTriangleLayerCanvasContext = document.getElementById(highlightedTriangleLayerId).getContext('2d');
 
     returnedCanvasState.fragmentCanvasId = fragmentCanvasId;
     returnedCanvasState.fragmentCanvas = document.getElementById(fragmentCanvasId);
@@ -1894,12 +1902,14 @@ function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanv
 
 function buildReferenceCanvasState() {
     return buildCommonCanvasState(REFERENCE_CANVAS_ID, REFERENCE_CANVAS_OVERLAY_ID,
-        REFERENCE_CANVAS_IMAGE_OUTLINE_ID, REFERENCE_FRAGMENT_CANVAS_ID, _g_preloadImage);
+        REFERENCE_CANVAS_IMAGE_OUTLINE_ID, REFERENCE_FRAGMENT_CANVAS_ID, REFERENCE_HIGHLIGHTED_CANVAS_ID,
+        _g_preloadImage);
 }
 
 function buildInteractiveCanvasState() {
     return buildCommonCanvasState(INTERACTIVE_CANVAS_ID, INTERACTIVE_CANVAS_OVERLAY_ID,
-        INTERACTIVE_CANVAS_IMAGE_OUTLINE_ID, INTERACTIVE_FRAGMENT_CANVAS_ID, _g_preloadImage);
+        INTERACTIVE_CANVAS_IMAGE_OUTLINE_ID, INTERACTIVE_FRAGMENT_CANVAS_ID, INTERACTIVE_HIGHLIGHTED_CANVAS_ID,
+        _g_preloadImage);
 }
 
 function buildGlobalState() {
