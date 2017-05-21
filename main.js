@@ -37,7 +37,7 @@ const REFERENCE_CANVAS_IMAGE_OUTLINE_ID = "databaseImageCanvasImageOutline";
 const REFERENCE_FRAGMENT_CANVAS_ID = "fragmentCanvas2";
 const REFERENCE_HIGHLIGHTED_CANVAS_ID = "databaseImageCanvasHighlightedTriangle";
 
-var g_numberOfKeypoints = 4;
+var g_numberOfKeypoints = 30;
 const MIN_CROPPING_POLYGON_AREA = 600;
 
 function newStep(minPntDist, maxPntDist, minTriArea, colour) {
@@ -782,6 +782,9 @@ function drawFragment(baseCanvas, fragmentCanvasContext, fragmentTriangle) {
     fragmentCanvasContext.transform(mat[0][0], mat[1][0], mat[0][1], mat[1][1], mat[0][2], mat[1][2]);
     fragmentCanvasContext.drawImage(baseCanvas, 0, 0);
     fragmentCanvasContext.restore();
+    fragmentCanvasContext.save();
+    cropCanvasImage(fragmentCanvasContext, getTargetTriangleRotated180());
+    fragmentCanvasContext.restore();
 }
 
 function highlightTriangle(layerIndex, triangleIndex) {
@@ -814,10 +817,11 @@ function highlightTriangle(layerIndex, triangleIndex) {
     var referenceFragmentCanvasContext = g_globalState.referenceCanvasState.fragmentCanvasContext;
     drawFragment(referenceCanvas, referenceFragmentCanvasContext, triangleStruct.referenceTriangle);
 
-    // var pHash1 = pHash(interactiveFragmentCanvas);
-    // var pHash2 = pHash(referenceFragmentCanvas);
-    // var pHashDistance = distance(pHash1, pHash2);
-    // $("#pHashDistanceOutputWrapper").html("" + pHashDistance + "");
+    //Update pHash output
+    var pHash1 = pHash(interactiveFragmentCanvasContext.canvas);
+    var pHash2 = pHash(referenceFragmentCanvasContext.canvas);
+    var pHashDistance = distance(pHash1, pHash2);
+    $("#pHashDistanceOutputWrapper").html("" + pHashDistance + "");
 
 }
 
