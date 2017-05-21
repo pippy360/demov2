@@ -137,15 +137,9 @@ function toggleDrawUIOverlayMode() {
     draw();
 }
 
-function getTransformedImageOutline(imageOutline, appliedTransformations) {
-    var keypointsToken1 = convertKeypointsToMatrixKeypoints(imageOutline);
-    var keypointsToken2 = applyTransformationMatrixToAllKeypoints(keypointsToken1, appliedTransformations);
-    var keypointsToken3 = convertMatrixKeypointsToKeypointObjects(keypointsToken2);
-    return keypointsToken3
-}
 
 function applyTransformationToImageOutline(imageOutline, appliedTransformations) {
-    return getTransformedImageOutline(imageOutline, appliedTransformations);
+    return applyTransformationMatrixToAllKeypointsObjects(imageOutline, appliedTransformations);
 }
 
 function getIdentityTransformations() {
@@ -653,7 +647,7 @@ function applyTransformationMatToSingleTriangle(triangle, transformationMatrix) 
     return transformedTriangle;
 }
 
-function computeTransformedTrianglesWithMatrix(triangles, transformationMatrix) {
+function applyTransformationToTriangles(triangles, transformationMatrix) {
     var ret = [];
     for (var i = 0; i < triangles.length; i++) {
         var currentTriangle = triangles[i];
@@ -974,9 +968,9 @@ function isAnyPointsOutsideCanvas(triangle, canvasDimensions) {
     for (var i = 0; i < triangle.length; i++) {
         var point = triangle[i];
         if (
-            point.x > canvasDimensions.x ||
+            point.x > canvasDimensions.width ||
             point.x < 0 ||
-            point.y > canvasDimensions.y ||
+            point.y > canvasDimensions.height ||
             point.y < 0) {
             //invalid triangle
             return true;
@@ -1104,56 +1098,25 @@ function paintCanvasWhite(canvasContext) {
     canvasContext.fillRect(0, 0, canvas.width, canvas.height); // clear canvas
 }
 
-//FIXME: remove this
-function drawCanvasUiOverlay(canvasContext, isTransformationBeingAppliedToCanvas) {
-    var keypoints = getKeypoints();
-    var interactiveImageTransformedKeypoints = computeTransformedKeypoints(keypoints, interactiveImageTransformations);
-
-    var canvasDimensions = {
-        x: canvasContext.canvas.width,
-        y: canvasContext.canvas.height
-    };
-    //fixme:
-    //filterKeypointsOutsidePolygon(keypoints, croppingPolygon);
-    var interactiveFilteredKeypoints = filterKeypointsOutsidePolygon(keypoints, croppingPolygon);
-
-    g_cachedCalculatedInteractiveCanvasKeypoints = interactiveFilteredKeypoints;
-    if (g_shouldDrawKeypoints) {
-        drawKeypoints(referenceCanvasContext, referenceImageTransformedKeypoints);
-    }
-
-    var interactiveTrianglesForAllSteps = [];
+//FIXME: all this code sucks
+function filterInvalidTrianglesForAllSteps(triangles, canvasDimensions, imageOutline) {
     var filteredReferenceImageTrianglesForAllSteps = [];
-    if (g_shouldDrawTriangles) {
-        for (var i = 0; i < g_steps.length; i++) {
-            var currentStep = g_steps[i];
-            var tempTriangles = computeTriangles(interactiveFilteredKeypoints, currentStep.maxPntDist, currentStep.minPntDist, currentStep.minTriArea);
-            interactiveTrianglesForAllSteps = interactiveTrianglesForAllSteps.concat(tempTriangles);
-        }
+    for (var i = 0; i < g_steps.length; i++) {
 
-        var projectionMatrix = matrixMultiply(referenceImageTransformations, math.inv(interactiveImageTransformations));
-        var trianglesProjectedOntoReferenceCanvas = computeTransformedTrianglesWithMatrix(interactiveTrianglesForAllSteps, projectionMatrix);
+        //FIXME: this doesn't handle duplicates
 
-        for (var i = 0; i < g_steps.length; i++) {
+        var currentStep = g_steps[i];
+        var tempFilteredReferenceImageTriangles = filterInvalidTriangles(triangles,
+            canvasDimensions, currentStep.minPntDist, currentStep.maxPntDist, currentStep.minTriArea, imageOutline);
 
-            //FIXME: this doesn't handle duplicates
-
-            var currentStep = g_steps[i];
-            var tempFilteredReferenceImageTriangles = filterInvalidTriangles(trianglesProjectedOntoReferenceCanvas,
-                referenceCanvasDimensions, currentStep.minPntDist, currentStep.maxPntDist, currentStep.minTriArea, referenceTransformedCroppingPoints2);
-
-            filteredReferenceImageTrianglesForAllSteps = filteredReferenceImageTrianglesForAllSteps.concat(tempFilteredReferenceImageTriangles);
-        }
-
-        g_triangleMapByReferenceTriangleIndex = buildReferenceAndInteractiveImageTrianglesByReferenceTriangleIndex(filteredReferenceImageTrianglesForAllSteps, interactiveTrianglesForAllSteps);
-
-        var filteredReferenceImageTrianglesForAllStepsWithoutIndexes = getAllTrianglesFromIndexTriangleObjects(filteredReferenceImageTrianglesForAllSteps);
-        drawTriangles(referenceCanvasContext, filteredReferenceImageTrianglesForAllStepsWithoutIndexes);
-        drawTriangles(interactiveCanvasContext, interactiveTrianglesForAllSteps);
+        filteredReferenceImageTrianglesForAllSteps = filteredReferenceImageTrianglesForAllSteps.concat(tempFilteredReferenceImageTriangles);
     }
+    //FIXME: recompute this map
+    //g_triangleMapByReferenceTriangleIndex = buildReferenceAndInteractiveImageTrianglesByReferenceTriangleIndex(filteredReferenceImageTrianglesForAllSteps, triangles);
 
+    var filteredReferenceImageTrianglesForAllStepsWithoutIndexes = getAllTrianglesFromIndexTriangleObjects(filteredReferenceImageTrianglesForAllSteps);
+    return filteredReferenceImageTrianglesForAllStepsWithoutIndexes;
 }
-
 
 function drawPolygonPath(ctx, inPoints) {
 
@@ -1251,7 +1214,7 @@ function isKeypointOccluded(keypoint, layers) {
     for (var i = 0; i < layers.length; i++) {
         var layer = layers[i];
 
-        var imageOutline = getTransformedImageOutline(layer.nonTransformedImageOutline, layer.appliedTransformations)
+        var imageOutline = applyTransformationToImageOutline(layer.nonTransformedImageOutline, layer.appliedTransformations)
         if (isPointInPolygon(keypoint, imageOutline)) {
             return true;
         }
@@ -1273,18 +1236,9 @@ function getNonOccludedKeypoints(keypoints, layers) {
     return result;
 }
 
-//FIXME: clean up parameters
-function drawUiLayer(canvasContext, keypoints) {
+function drawUiLayer(canvasContext, keypoints, triangles) {
     drawKeypoints(canvasContext, keypoints);
-    var interactiveTrianglesForAllSteps = [];
-    for (var i = 0; i < g_steps.length; i++) {
-        var currentStep = g_steps[i];
-        var tempTriangles = computeTriangles(keypoints, currentStep.maxPntDist, currentStep.minPntDist, currentStep.minTriArea);
-        interactiveTrianglesForAllSteps = interactiveTrianglesForAllSteps.concat(tempTriangles);
-    }
-
-    drawTriangles(canvasContext, interactiveTrianglesForAllSteps);
-    //todo draw triangles
+    drawTriangles(canvasContext, triangles);
 }
 
 function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage) {
@@ -1300,11 +1254,10 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     }
     var transformationsMat = drawingLayer.layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
-    drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints);
+    drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles);
 }
 
 function generateOutputList() {
-    if (!g_skipListGen) {
         var outputStr = "";
         var keys = g_triangleMapByReferenceTriangleIndex.keys();
         for (var key = keys.next(); !key.done; key = keys.next()) { //iterate over keys
@@ -1320,7 +1273,6 @@ function generateOutputList() {
             function () {
                 $(this).removeClass("active");
             });
-    }
     $("#number_of_triangles_output").html("Possible Matches: " + interactiveTrianglesForAllSteps.length);
     $("#number_of_matching_triangles_output").html("Actual Matches: " + g_triangleMapByReferenceTriangleIndex.size);
 }
@@ -1381,13 +1333,23 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
         
-        var transformedImageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, currentLayer.appliedTransformations);
+        var transformedImageOutline = applyTransformationToImageOutline(currentLayer.nonTransformedImageOutline, currentLayer.appliedTransformations);
         var layersOnTop = layers.slice(0, i);
         var filteredKeypoints = filterKeypoints(currentLayer.keypoints, transformedImageOutline, currentLayer.appliedTransformations, layersOnTop, canvasDimensions);
-        
-        resultMap.set(currentLayer, buildDrawingLayer(filteredKeypoints, null/*FIXME: computedTriangles */, currentLayer));
-        result.push(buildDrawingLayer(filteredKeypoints, null/*FIXME: computedTriangles */, currentLayer));
+
+        //compute the triangles FIXME: extract to method
+        var computedTrianglesForAllSteps = [];
+        for (var j = 0; j < g_steps.length; j++) {
+            var currentStep = g_steps[j];
+            var tempTriangles = computeTriangles(filteredKeypoints, currentStep.maxPntDist, currentStep.minPntDist, currentStep.minTriArea);
+            computedTrianglesForAllSteps = computedTrianglesForAllSteps.concat(tempTriangles);
+        }
+
+        const drawingLayer = buildDrawingLayer(filteredKeypoints, computedTrianglesForAllSteps, currentLayer);
+        resultMap.set(currentLayer, drawingLayer);
+        result.push(drawingLayer);
     }
+
 
     return [resultMap, result];
 }
@@ -1402,12 +1364,14 @@ function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, drawingLaye
         var transformationMat = math.inv(associatedLayer.appliedTransformations);
         var interactiveImageDrawingLayer = drawingLayersByInteractiveImageLayer.get(associatedLayer);
         var associatedLayerVisableKeypoints = applyTransformationMatrixToAllKeypointsObjects(interactiveImageDrawingLayer.transformedVisableKeypoints, transformationMat);
- 
-        var transformedImageOutline = getTransformedImageOutline(currentLayer.nonTransformedImageOutline, currentLayer.appliedTransformations);
+        var nonTransformedTriangles = applyTransformationToTriangles(interactiveImageDrawingLayer.computedTriangles, transformationMat);
+        var transformedTriangles = applyTransformationToTriangles(nonTransformedTriangles, currentLayer.appliedTransformations);
+        var transformedImageOutline = applyTransformationToImageOutline(currentLayer.nonTransformedImageOutline, currentLayer.appliedTransformations);
+        var filteredTriangles = filterInvalidTrianglesForAllSteps(transformedTriangles, canvasDimensions, transformedImageOutline);
         var layersOnTop = layers.slice(0, i);
         var filteredKeypoints = filterKeypoints(associatedLayerVisableKeypoints, transformedImageOutline, currentLayer.appliedTransformations, layersOnTop, canvasDimensions);
         
-        result.push(buildDrawingLayer(filteredKeypoints, null/*FIXME: computedTriangles */, currentLayer));
+        result.push(buildDrawingLayer(filteredKeypoints, filteredTriangles, currentLayer));
     }
 
     return result;
@@ -1437,15 +1401,13 @@ function drawLayers(canvasState, drawingLayers) {
     if (isCroppingEffectActive) {
         var appliedTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
         var imageOutlineToken1 = g_globalState.activeCanvas.activeLayer.nonTransformedImageOutline;
-        var transformedImageOutline = getTransformedImageOutline(imageOutlineToken1, appliedTransformations);
+        var transformedImageOutline = applyTransformationToImageOutline(imageOutlineToken1, appliedTransformations);
         var canvasContext = g_globalState.activeCanvas.imageLayerCanvasContext;
         drawCroppingEffect(canvasContext, transformedImageOutline);
     }
 }
 
 function draw() {
-
-    var tempAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(g_globalState.temporaryAppliedTransformations);
 
     var interactiveCanvasLayers = g_globalState.interactiveCanvasState.layers;
     var isInteractiveCanvasActive = g_globalState.activeCanvas == g_globalState.interactiveCanvasState;
@@ -1807,7 +1769,7 @@ function getActiveLayerWithCanvasPosition(canvasMousePosition, layers, noMatchRe
 
     for (var i = 0; i < layers.length; i++) {
         var layer = layers[i];
-        var imageOutline = getTransformedImageOutline(layer.nonTransformedImageOutline, layer.appliedTransformations);
+        var imageOutline = applyTransformationToImageOutline(layer.nonTransformedImageOutline, layer.appliedTransformations);
         //take the cropping shape
         if (isPointInPolygon(canvasMousePosition, imageOutline)) {
             return layer;
