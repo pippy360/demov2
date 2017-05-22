@@ -1083,26 +1083,6 @@ function containsMatchingTriangle(addedReferenceTriangles, refTri) {
     return false;
 }
 
-//FIXME: REMOVE THIS IF NOT USED
-function buildReferenceAndInteractiveImageTrianglesByReferenceTriangleIndex(referenceTriangleAndIndex, interactiveTrianglesForAllSteps) {
-    var ret = new Map();
-    var addedReferenceTriangles = [];
-    for (var i = 0; i < referenceTriangleAndIndex.length; i++) {
-        var refTri = referenceTriangleAndIndex[i].triangle;
-        var idx = referenceTriangleAndIndex[i].index;
-        var intTri = interactiveTrianglesForAllSteps[idx];
-
-        //FIXME: this duplicate detection is a really horrible hack!!!
-        if (containsMatchingTriangle(addedReferenceTriangles, refTri)) {
-            //skip we don't want to add duplicate triangles
-        } else {
-            ret.set(idx, {referenceTriangle: refTri, interactiveTriangle: intTri});
-            addedReferenceTriangles.push(refTri);
-        }
-    }
-    return ret;
-}
-
 function getTableEntry(key, layerIndex, area) {
     //FIXME: i don't like these hardcoded strings
     var outputStrClass = "triangleTRAll " + "triangleTR" + layerIndex + "_" + key.value;
@@ -1282,14 +1262,17 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles);
 }
 
-function generateOutputList(triangleMap) {
+function generateOutputList(triangleMapArray) {
     var outputStr = "";
 
-    var keys = triangleMap.keys();
-    for (var key = keys.next(); !key.done; key = keys.next()) { //iterate over keys
-        var tri = triangleMap.get(key.value).referenceTriangle;
-        var area = getArea(tri);
-        outputStr = outputStr + getTableEntry(key, layerIndex, area);
+    for (var i = 0; i < triangleMapArray.length; i++) {
+        var triangleMap = triangleMapArray[i];
+        var keys = triangleMap.keys();
+        for (var key = keys.next(); !key.done; key = keys.next()) { //iterate over keys
+            var tri = triangleMap.get(key.value).referenceTriangle;
+            var area = getArea(tri);
+            outputStr = outputStr + getTableEntry(key, 0, area);
+        }
     }
 
     $("#triangleListBody").html(outputStr);
@@ -1448,19 +1431,24 @@ function drawLayers(canvasState, drawingLayers) {
 
 //FIXME: this is really hacky
 function buildInteractiveTriangleByReferenceTriangleMap(filteredTrianglesWithIndexInLayerArray, interactiveImageDrawingLayersByInteractiveImageLayer) {
-    var interactiveTriangleByReferenceTriangleMap = new Map();
+    var interactiveTriangleByReferenceTriangleMapInLayerArray = [];
     for (var i = 0; i < filteredTrianglesWithIndexInLayerArray.length; i++) {
+        var interactiveTriangleByReferenceTriangleMap = new Map();
         var currentLayer = filteredTrianglesWithIndexInLayerArray[i].layer;
         var associatedDrawingLayer = interactiveImageDrawingLayersByInteractiveImageLayer.get(currentLayer.associatedLayer)
         var trianglesWithindex = filteredTrianglesWithIndexInLayerArray[i].trianglesWithIndex;
         for (var j = 0; j < trianglesWithindex.length; j++) {
             var index = trianglesWithindex[j].index;
             var referenceTriangle = trianglesWithindex[j].triangle;
-            var associatedTriangle = associatedDrawingLayer[index];
-            interactiveTriangleByReferenceTriangleMap.set(referenceTriangle, associatedTriangle);
+            var associatedTriangle = associatedDrawingLayer.computedTriangles[index];
+            interactiveTriangleByReferenceTriangleMap.set(index, {
+                referenceTriangle: referenceTriangle,
+                interactiveTriangle: associatedTriangle
+            });
         }
+        interactiveTriangleByReferenceTriangleMapInLayerArray.push(interactiveTriangleByReferenceTriangleMap);
     }
-    return interactiveTriangleByReferenceTriangleMap;
+    return interactiveTriangleByReferenceTriangleMapInLayerArray;
 }
 
 function draw() {
