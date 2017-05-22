@@ -1015,6 +1015,7 @@ function areAllKeypointsValid(triangle, validKeypoints) {
     return true;
 }
 
+//Returns the filtered triangle along with the triangles previous index
 function filterInvalidTriangles(triangles, validKeypoints, minPntDist, maxPntDist, minTriArea) {
     var ret = [];
     for (var i = 0; i < triangles.length; i++) {
@@ -1059,7 +1060,7 @@ function containsMatchingPoint(tri, currPt) {
     return false;
 }
 
-function compareTriangles(tri1, tri2) {
+function areAllPointsMatching(tri1, tri2) {
     for (var i = 0; i < tri1.length; i++) {
         var currPt = tri1[i];
         if (containsMatchingPoint(tri2, currPt)) {
@@ -1075,13 +1076,14 @@ function compareTriangles(tri1, tri2) {
 function containsMatchingTriangle(addedReferenceTriangles, refTri) {
     for (var i = 0; i < addedReferenceTriangles.length; i++) {
         var currTri = addedReferenceTriangles[i];
-        if (compareTriangles(refTri, currTri)) {
+        if (areAllPointsMatching(refTri, currTri)) {
             return true;
         }
     }
     return false;
 }
 
+//FIXME: REMOVE THIS IF NOT USED
 function buildReferenceAndInteractiveImageTrianglesByReferenceTriangleIndex(referenceTriangleAndIndex, interactiveTrianglesForAllSteps) {
     var ret = new Map();
     var addedReferenceTriangles = [];
@@ -1105,7 +1107,7 @@ function getTableEntry(key, layerIndex, area) {
     //FIXME: i don't like these hardcoded strings
     var outputStrClass = "triangleTRAll " + "triangleTR" + layerIndex + "_" + key.value;
     var outputStr =
-        "<tr class=\"" + outputStrClass + "\" onmouseover=\"highlightTriangle("+layerIndex+", " + key.value + ")\">" +
+        "<tr class=\"" + outputStrClass + "\" onmouseover=\"highlightTriangle(" + layerIndex + ", " + key.value + ")\">" +
         "<td>" + key.value + "</td>" +
         "<td>" + Math.round(area) + " </td>" +
         "</tr>";
@@ -1118,27 +1120,27 @@ function paintCanvasWhite(canvasContext) {
     canvasContext.fillRect(0, 0, canvas.width, canvas.height); // clear canvas
 }
 
-//FIXME: all this code sucks
 function filterInvalidTrianglesForAllSteps(triangles, validKeypoints) {
     var filteredReferenceImageTrianglesForAllSteps = [];
     for (var i = 0; i < g_steps.length; i++) {
-
-        //FIXME: this doesn't handle duplicates
 
         var currentStep = g_steps[i];
         var tempFilteredReferenceImageTriangles = filterInvalidTriangles(triangles,
             validKeypoints, currentStep.minPntDist, currentStep.maxPntDist, currentStep.minTriArea);
 
-        filteredReferenceImageTrianglesForAllSteps = filteredReferenceImageTrianglesForAllSteps.concat(tempFilteredReferenceImageTriangles);
-    }
-    //FIXME: recompute this map
-    var triangleMapByReferenceTriangleIndex = buildReferenceAndInteractiveImageTrianglesByReferenceTriangleIndex(filteredReferenceImageTrianglesForAllSteps, triangles);
+        //add all the triangles while avoiding adding duplicates
 
-    var filteredReferenceImageTrianglesForAllStepsWithoutIndexes = getAllTrianglesFromIndexTriangleObjects(filteredReferenceImageTrianglesForAllSteps);
-    return [
-        filteredReferenceImageTrianglesForAllStepsWithoutIndexes,
-        triangleMapByReferenceTriangleIndex
-    ];
+        for (var j = 0; j < tempFilteredReferenceImageTriangles.length; j++) {
+            var currentTriangleWithindex = tempFilteredReferenceImageTriangles[j];
+            if (containsMatchingTriangle(filteredReferenceImageTrianglesForAllSteps, currentTriangleWithindex.triangle)) {
+                //ignore, don't add duplicates
+            } else {
+                filteredReferenceImageTrianglesForAllSteps.push(currentTriangleWithindex);
+            }
+        }
+    }
+
+    return filteredReferenceImageTrianglesForAllSteps;
 }
 
 function drawPolygonPath(ctx, inPoints) {
@@ -1280,18 +1282,14 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles);
 }
 
-function generateOutputList(triangleMapArray) {
-
+function generateOutputList(triangleMap) {
     var outputStr = "";
-    for (var i = 0; i < triangleMapArray.length; i++) {
-        var triangleMap = triangleMapArray[i];
-        var layerIndex = i;
-        var keys = triangleMap.keys();
-        for (var key = keys.next(); !key.done; key = keys.next()) { //iterate over keys
-            var tri = triangleMap.get(key.value).referenceTriangle;
-            var area = getArea(tri);
-            outputStr = outputStr + getTableEntry(key, layerIndex, area);
-        }
+
+    var keys = triangleMap.keys();
+    for (var key = keys.next(); !key.done; key = keys.next()) { //iterate over keys
+        var tri = triangleMap.get(key.value).referenceTriangle;
+        var area = getArea(tri);
+        outputStr = outputStr + getTableEntry(key, layerIndex, area);
     }
 
     $("#triangleListBody").html(outputStr);
@@ -1382,10 +1380,18 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
     return [resultMap, result];
 }
 
+function _extractTriangles(filteredTrianglesWithIndex) {
+    var result = [];
+    for (var i = 0; i < filteredTrianglesWithIndex.length; i++) {
+        result.push(filteredTrianglesWithIndex[i].triangle);
+    }
+    return result;
+}
+
 function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, drawingLayersByInteractiveImageLayer) {
 
     var result = [];
-    var triangleMapByReferenceTriangleIndexForEachMap = [];
+    var filteredTrianglesWithIndexInLayerArray = [];
     for (var i = 0; i < layers.length; i++) {
         var currentLayer = layers[i];
 
@@ -1398,15 +1404,16 @@ function buildReferenceCanvasDrawingLayers(canvasDimensions, layers, drawingLaye
         var transformedImageOutline = applyTransformationToImageOutline(currentLayer.nonTransformedImageOutline, currentLayer.appliedTransformations);
         var layersOnTop = layers.slice(0, i);
         var filteredKeypoints = filterKeypoints(associatedLayerVisableKeypoints, transformedImageOutline, currentLayer.appliedTransformations, layersOnTop, canvasDimensions);
-        var returnValueContainer = filterInvalidTrianglesForAllSteps(transformedTriangles, filteredKeypoints);
-        var filteredTriangles = returnValueContainer[0];
-        var triangleMapByReferenceTriangleIndex = returnValueContainer[1];
-
+        var filteredTrianglesWithIndex = filterInvalidTrianglesForAllSteps(transformedTriangles, filteredKeypoints);
+        var filteredTriangles = _extractTriangles(filteredTrianglesWithIndex);
         result.push(buildDrawingLayer(filteredKeypoints, filteredTriangles, currentLayer));
-        triangleMapByReferenceTriangleIndexForEachMap.push(triangleMapByReferenceTriangleIndex);
+        filteredTrianglesWithIndexInLayerArray.push({
+            layer: currentLayer,
+            trianglesWithIndex: filteredTrianglesWithIndex
+        });
     }
 
-    return [result, triangleMapByReferenceTriangleIndexForEachMap];
+    return [result, filteredTrianglesWithIndexInLayerArray];
 }
 
 function drawLayers(canvasState, drawingLayers) {
@@ -1439,6 +1446,23 @@ function drawLayers(canvasState, drawingLayers) {
     }
 }
 
+//FIXME: this is really hacky
+function buildInteractiveTriangleByReferenceTriangleMap(filteredTrianglesWithIndexInLayerArray, interactiveImageDrawingLayersByInteractiveImageLayer) {
+    var interactiveTriangleByReferenceTriangleMap = new Map();
+    for (var i = 0; i < filteredTrianglesWithIndexInLayerArray.length; i++) {
+        var currentLayer = filteredTrianglesWithIndexInLayerArray[i].layer;
+        var associatedDrawingLayer = interactiveImageDrawingLayersByInteractiveImageLayer.get(currentLayer.associatedLayer)
+        var trianglesWithindex = filteredTrianglesWithIndexInLayerArray[i].trianglesWithIndex;
+        for (var j = 0; j < trianglesWithindex.length; j++) {
+            var index = trianglesWithindex[j].index;
+            var referenceTriangle = trianglesWithindex[j].triangle;
+            var associatedTriangle = associatedDrawingLayer[index];
+            interactiveTriangleByReferenceTriangleMap.set(referenceTriangle, associatedTriangle);
+        }
+    }
+    return interactiveTriangleByReferenceTriangleMap;
+}
+
 function draw() {
 
     var interactiveCanvasLayers = g_globalState.interactiveCanvasState.layers;
@@ -1454,8 +1478,9 @@ function draw() {
 
     var returnValueContainer = buildReferenceCanvasDrawingLayers(canvasDimensions, referenceCanvasLayers, interactiveImageDrawingLayersByInteractiveImageLayer);
     var referenceImageDrawingLayers = returnValueContainer[0];
-    var triangleMapByReferenceTriangleIndex = returnValueContainer[1];
+    var filteredTrianglesWithIndexInLayerArray = returnValueContainer[1];
 
+    var triangleMapByReferenceTriangleIndex = buildInteractiveTriangleByReferenceTriangleMap(filteredTrianglesWithIndexInLayerArray, interactiveImageDrawingLayersByInteractiveImageLayer);
     drawLayers(g_globalState.referenceCanvasState, referenceImageDrawingLayers, isReferenceCanvasActive);
 
     return triangleMapByReferenceTriangleIndex;
@@ -1869,8 +1894,7 @@ function setCurrnetOperation(newState) {
 }
 
 function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanvasId, fragmentCanvasId,
-                                highlightedTriangleLayerId, preloadedImage)
-{
+                                highlightedTriangleLayerId, preloadedImage) {
     var returnedCanvasState = newCanvasState();
 
     returnedCanvasState.uiLayerId = overlayCanvasId;
