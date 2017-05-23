@@ -1279,7 +1279,7 @@ function generateOutputList(triangleMapArray) {
         for (var key = keys.next(); !key.done; key = keys.next()) { //iterate over keys
             var tri = triangleMap.get(key.value).referenceTriangle;
             var area = getArea(tri);
-            outputStr = outputStr + getTableEntry(key, 0, area);
+            outputStr = outputStr + getTableEntry(key, i, area);
         }
     }
 
@@ -1501,7 +1501,6 @@ $(document).mousemove(function (e) {
         g_globalState.activeCanvas.imageOutlineHighlightLayer = g_globalState.activeCanvas.activeLayer;
         handleMouseMoveOnDocument(e);
         draw();
-        debugger;
         clearOutputListAndWipeCanvas();
     }
 });
