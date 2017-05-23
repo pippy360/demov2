@@ -1262,6 +1262,14 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles);
 }
 
+function clearOutputListAndWipeCanvas() {
+    $("#triangleListBody").html("");
+    var c1 = g_globalState.interactiveCanvasState.highlightedTriangleLayerCanvasContext;
+    var c2 = g_globalState.referenceCanvasState.highlightedTriangleLayerCanvasContext;
+    clearCanvasByContext(c1);
+    clearCanvasByContext(c2);
+}
+
 function generateOutputList(triangleMapArray) {
     var outputStr = "";
 
@@ -1493,6 +1501,8 @@ $(document).mousemove(function (e) {
         g_globalState.activeCanvas.imageOutlineHighlightLayer = g_globalState.activeCanvas.activeLayer;
         handleMouseMoveOnDocument(e);
         draw();
+        debugger;
+        clearOutputListAndWipeCanvas();
     }
 });
 
