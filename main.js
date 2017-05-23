@@ -1073,6 +1073,16 @@ function areAllPointsMatching(tri1, tri2) {
     return true;
 }
 
+function containsMatchingTriangleWithIndexes(addedReferenceTrianglesWithIndex, refTri) {
+    for (var i = 0; i < addedReferenceTrianglesWithIndex.length; i++) {
+        var currTri = addedReferenceTrianglesWithIndex[i].triangle;
+        if (areAllPointsMatching(refTri, currTri)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function containsMatchingTriangle(addedReferenceTriangles, refTri) {
     for (var i = 0; i < addedReferenceTriangles.length; i++) {
         var currTri = addedReferenceTriangles[i];
@@ -1112,7 +1122,7 @@ function filterInvalidTrianglesForAllSteps(triangles, validKeypoints) {
 
         for (var j = 0; j < tempFilteredReferenceImageTriangles.length; j++) {
             var currentTriangleWithindex = tempFilteredReferenceImageTriangles[j];
-            if (containsMatchingTriangle(filteredReferenceImageTrianglesForAllSteps, currentTriangleWithindex.triangle)) {
+            if (containsMatchingTriangleWithIndexes(filteredReferenceImageTrianglesForAllSteps, currentTriangleWithindex.triangle)) {
                 //ignore, don't add duplicates
             } else {
                 filteredReferenceImageTrianglesForAllSteps.push(currentTriangleWithindex);
