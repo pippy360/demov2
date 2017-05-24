@@ -8,6 +8,8 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
           integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet">
     <style>
         document {
             font-family: "Roboto", "Helvetica", "Arial", sans-serif;
@@ -144,7 +146,7 @@
             font-family: "Roboto", "Helvetica", "Arial", sans-serif;
             color: rgba(0,0,0,0.7);
             width: 550px;
-            padding: 40px 0px;
+            padding: 80px 0px;
             margin: auto;
         }
 
@@ -195,7 +197,7 @@
             width: 100%;
             min-width: 1200px;
             padding-bottom: 60px;
-            height: 600px;
+            height: 700px;
         }
 
         .transformationsLabel {
@@ -233,6 +235,14 @@
         }
 
         .twoCanvasWrapper {
+        }
+
+        .interactiveCanvasWrapper {
+            width: 280px;
+            height: 280px;
+        }
+
+        .referenceCanvasWrapper {
             width: 280px;
             height: 280px;
         }
@@ -317,7 +327,7 @@
             <div id="bigCanvasContainer" class="bigCanvasContainer">
                 <div class="canvasWrapper">
                     <label class="canvasTitle">Query Image</label>
-                    <div class="canvasShadow twoCanvasWrapper">
+                    <div class="canvasShadow interactiveCanvasWrapper">
                         <canvas id="queryImageCanvasImageContent" class="canvasBottom" width="280"
                                 height="280"></canvas>
                         <canvas id="queryImageCanvasUiOverlay" class="canvasTop" width="280" height="280"></canvas>
@@ -327,7 +337,7 @@
                 </div>
                 <div class="canvasWrapper">
                     <label class="canvasTitle">Image Stored In Database</label>
-                    <div class="canvasShadow twoCanvasWrapper">
+                    <div class="canvasShadow referenceCanvasWrapper">
                         <canvas id="databaseImageCanvasImageContent" class="canvasBottom" width="280"
                                 height="280"></canvas>
                         <canvas id="databaseImageCanvasUiOverlay" class="canvasTop" width="280" height="280"></canvas>
@@ -373,7 +383,7 @@
     </div>
     <div class="moreWrapper">
         <div class="more">
-            <button class="moreButton">I</button>
+            <button class="moreButton"><i class="material-icons">keyboard_arrow_down</i></button>
         </div>
     </div>
     <div class="aboutAreaWrapper">

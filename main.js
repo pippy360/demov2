@@ -19,6 +19,7 @@ var g_drawingOptions = {
 // consts
 //
 
+const MAX_TRIANGLES_DRAW = 200;//max number of triangles to draw per layer
 //FIXME: fix hardcoded values
 const TARGET_TRIANGLE_SCALE = {
     x: 160,
@@ -45,7 +46,7 @@ function newStep(minPntDist, maxPntDist, minTriArea, colour) {
         minPntDist: minPntDist,
         maxPntDist: maxPntDist,
         minTriArea: minTriArea,
-        colour: colour
+        colour: [255, 87, 34]
     }
 }
 
@@ -843,7 +844,6 @@ function drawTriangleWithColour(ctx, tri, strokeColour, fillColour, enableFill) 
     var alpha = 1.0;
     ctx.strokeStyle = 'rgba(' + strokeColour[0] + ', ' + strokeColour[1] + ' ,' + strokeColour[2] + ', ' + alpha + ')';
     //ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
-    ctx.fillStyle = 'rgba(' + fillColour[0] + ', ' + fillColour[1] + ' ,' + fillColour[2] + ', ' + .9 + ')';
     ctx.beginPath();
     ctx.moveTo(tri[0].x, tri[0].y);
     ctx.lineTo(tri[1].x, tri[1].y);
@@ -851,6 +851,7 @@ function drawTriangleWithColour(ctx, tri, strokeColour, fillColour, enableFill) 
     ctx.closePath();
     ctx.stroke();
     if (enableFill) {
+        ctx.fillStyle = 'rgba(' + fillColour[0] + ', ' + fillColour[1] + ' ,' + fillColour[2] + ', ' + .9 + ')';
         ctx.fill();
     }
 }
@@ -867,7 +868,7 @@ function drawKeypoints(interactiveCanvasContext, keypoints) {
 }
 
 function drawTriangle(ctx, tri, colour) {
-    drawTriangleWithColour(ctx, tri, colour, colour);
+    drawTriangleWithColour(ctx, tri, colour, null/*fill colour*/, false/*enable fill*/);
 }
 
 function getColourForIndex(pointDistance) {
@@ -884,6 +885,10 @@ function getColourForIndex(pointDistance) {
 function drawTriangles(canvasContext, triangles) {
     canvasContext.beginPath();
     for (var i = 0; i < triangles.length; i++) {
+        if (i >= MAX_TRIANGLES_DRAW) {
+            break;
+        }
+
         var colour = getColourForIndex(getEuclideanDistance(triangles[i][0], triangles[i][1]));
         drawTriangle(canvasContext, triangles[i], colour);
     }
@@ -1500,6 +1505,33 @@ function draw() {
 // #     # #    # #      #   #      #  #   ## #      #    #   #
 //  #####   ####  ###### #    #    ### #    # #       ####    #
 //user input
+
+function changeCanvasSize(canvas, newWidth, newHeight) {
+    canvas.width = newWidth;
+    canvas.height = newHeight;
+}
+
+function changeCanvasSizeByState(canvasState, newWidth, newHeight) {
+    changeCanvasSize(canvasState.uiLayerCanvas, newWidth, newHeight);
+    changeCanvasSize(canvasState.imageLayerCanvas, newWidth, newHeight);
+    changeCanvasSize(canvasState.imageOutlineLayerCanvas, newWidth, newHeight);
+    changeCanvasSize(canvasState.highlightedTriangleLayerCanvas, newWidth, newHeight);
+}
+
+function changeReferenceCanvasSize(width, height) {
+    changeCanvasSizeByState(g_globalState.referenceCanvasState, width, height);
+    $(".referenceCanvasWrapper").width(width);
+    $(".referenceCanvasWrapper").height(height);
+    draw();
+}
+
+function changeInteractiveCanvasSize(width, height) {
+    changeCanvasSizeByState(g_globalState.interactiveCanvasState, width, height);
+    $(".interactiveCanvasWrapper").width(width);
+    $(".interactiveCanvasWrapper").height(height);
+    draw();
+}
+
 
 $(document).mousedown(function (e) {
     //ignore
