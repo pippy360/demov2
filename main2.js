@@ -1382,6 +1382,8 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
             computedTrianglesForAllSteps = computedTrianglesForAllSteps.concat(tempTriangles);
         }
 
+        var computedTrianglesForAllSteps = filteredTrianglesByImageOutlineIntersection(layersOnTop, computedTrianglesForAllSteps);
+
         const drawingLayer = buildDrawingLayer(filteredKeypoints, computedTrianglesForAllSteps, currentLayer);
         resultMap.set(currentLayer, drawingLayer);
         result.push(drawingLayer);
@@ -1395,6 +1397,56 @@ function _extractTriangles(filteredTrianglesWithIndex) {
     var result = [];
     for (var i = 0; i < filteredTrianglesWithIndex.length; i++) {
         result.push(filteredTrianglesWithIndex[i].triangle);
+    }
+    return result;
+}
+
+function getCenterPointOfPoly(arr) {
+    var minX, maxX, minY, maxY;
+    for(var i=0; i< arr.length; i++){
+        minX = (arr[i].x < minX || minX == null) ? arr[i].x : minX;
+        maxX = (arr[i].x > maxX || maxX == null) ? arr[i].x : maxX;
+        minY = (arr[i].y < minY || minY == null) ? arr[i].y : minY;
+        maxY = (arr[i].y > maxY || maxY == null) ? arr[i].y : maxY;
+    }
+    return [(minX + maxX) /2, (minY + maxY) /2];
+}
+
+function arrayToPolygonObject(shapeArray) {
+    var arrayCenter = getCenterPointOfPoly(shapeArray);
+    var result = new Polygon({x: arrayCenter[0], y: arrayCenter[1]}, "#0000FF");
+    for (var i = 0; i < shapeArray.length; i++) {
+        result.addAbsolutePoint(shapeArray[i]);
+    }
+    return result;
+}
+
+function triangleIntersectsPolygon(triangle, imageOutline) {
+    var trianglePoly = arrayToPolygonObject(triangle);
+    var imageOutlinePoly = arrayToPolygonObject(imageOutline);
+    return trianglePoly.intersectsWith(imageOutlinePoly);
+}
+
+function triangleIntersectsLayers(triangle, layersOnTop) {
+    for (var i = 0; i < layersOnTop.length; i++) {
+        var currentLayer = layersOnTop[i];
+        var imageOutline = applyTransformationToImageOutline(currentLayer.nonTransformedImageOutline, currentLayer.appliedTransformations);
+        if (triangleIntersectsPolygon(triangle, imageOutline)){
+            return true;
+        }
+    }
+    return false;
+}
+
+function filteredTrianglesByImageOutlineIntersection(layersOnTop, filteredTrianglesWithIndex) {
+    var result = [];
+    for (var i = 0; i < filteredTrianglesWithIndex.length; i++) {
+        var currentTriangle = filteredTrianglesWithIndex[i];
+        if (triangleIntersectsLayers(currentTriangle, layersOnTop)){
+            //filter
+        } else {
+            result.push(filteredTrianglesWithIndex[i]);
+        }
     }
     return result;
 }
