@@ -14,6 +14,7 @@ var g_drawingOptions = {
     drawTriangles: true,
     forceApplyTransformations: false,
     drawImageOutline: true,
+    drawInteractiveCanvasUiLayer: true
 };
 
 //
@@ -1279,7 +1280,11 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     }
     var transformationsMat = drawingLayer.layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
-    drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
+    if (canvasState == g_globalState.interactiveCanvasState && !g_drawingOptions.drawInteractiveCanvasUiLayer) {
+
+    } else {
+        drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
+    }
 }
 
 function clearOutputListAndWipeCanvas() {
