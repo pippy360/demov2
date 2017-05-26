@@ -1843,6 +1843,13 @@ function handleMouseMoveCrop(mousePosition, activeLayer) {
     activeLayer.nonTransformedImageOutline.push(transformedPoint);
 }
 
+function applyTemporaryTransformationsToActiveLayer() {
+    var layer = getActiveLayer(g_globalState);
+    var temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(g_globalState.temporaryAppliedTransformations);
+    var savedLayerMat = g_globalState.transformationMatBeforeTemporaryTransformations;
+    layer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, savedLayerMat);
+}
+
 function handleMouseMoveOnDocument(e) {
     var pageMousePosition = getCurrentPageMousePosition(e);
     var globalState = g_globalState;
@@ -1867,10 +1874,7 @@ function handleMouseMoveOnDocument(e) {
             break;
     }
 
-    var layer = getActiveLayer(globalState);
-    var temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations);
-    savedLayerMat = globalState.transformationMatBeforeTemporaryTransformations;
-    layer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, savedLayerMat);
+    applyTemporaryTransformationsToActiveLayer();
 }
 
 function drawLayerImageOutline(ctx, imageOutlinePolygon) {
