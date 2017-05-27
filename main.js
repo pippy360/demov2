@@ -13,7 +13,7 @@ var g_drawingOptions = {
     drawKeypoints: false,
     drawTriangles: true,
     forceApplyTransformations: false,
-    drawImageOutline: true,
+    drawImageOutline: true
 };
 
 //
@@ -116,7 +116,7 @@ function newGlobalState() {
         isMouseDownAndClickedOnCanvas: null,
         temporaryAppliedTransformations: null,
         transformationMatBeforeTemporaryTransformations: null,
-        pageMouseDownPosition: null,
+        pageMouseDownPosition: null
     };
 }
 
@@ -135,14 +135,6 @@ var enum_TransformationOperation = {
 //
 // getters
 //
-
-function getInteractiveCanvas() {
-    return g_interactiveCanvas;
-}
-
-function getReferenceCanvas() {
-    return g_referenceCanvas;
-}
 
 function toggleDrawUIOverlayMode() {
     g_shouldDrawUIOverlay = !g_shouldDrawUIOverlay;
@@ -177,18 +169,6 @@ function wipeTemporaryAppliedTransformations() {
 
 function getActiveLayer(globalState) {
     return globalState.activeCanvas.activeLayer;
-}
-
-function getReferenceImageTransformations() {
-    return g_referenceImageTransformation;
-}
-
-function getInteractiveImageTransformations() {
-    return g_interactiveImageTransformation;
-}
-
-function getKeypoints() {
-    return g_keypoints;
 }
 
 
@@ -350,7 +330,7 @@ function pHash(img) {
      * picture.
      */
 
-    var vals = []
+    var vals = [];
     for (var x = 1; x <= smallerSize; x++) {
         for (var y = 1; y <= smallerSize; y++) {
             vals.push(dctVals[size * x + y])
@@ -605,19 +585,6 @@ function convertMatrixKeypointsToKeypointObjects(keypoints) {
     return ret;
 }
 
-function computeTransformedKeypoints(keypoints, transformationMat) {
-    //turn the keypoints into arrays with an extra 1 at the end. {x: 2, y: 3} ---> [[2],[3],[1]]
-    var newKeypoints = convertKeypointsToMatrixKeypoints(keypoints);
-
-    //then mult each keypoint
-    var finalArrayKeypoints = applyTransformationMatrixToAllKeypoints(newKeypoints, transformationMat);
-
-    //convert back to keypoint objects
-    var finalKeypoints = convertMatrixKeypointsToKeypointObjects(finalArrayKeypoints);
-
-    return finalKeypoints;
-}
-
 function addTwoPoints(point1, point2) {
     return {
         x: point1.x + point2.x,
@@ -838,12 +805,6 @@ function drawBackgroudImageWithTransformationMatrix(canvasContext, image, transf
     canvasContext.restore();
 }
 
-function drawLineFromPointToMousePosition(ctx) {
-    // ctx.save();
-    // drawLine(mouseDownPoint, mouseCurrentPoint);
-    // ctx.restore();
-}
-
 function drawTriangleWithColour(ctx, tri, strokeColour, fillColour, enableFill) {
     var alpha = 1.0;
     ctx.strokeStyle = 'rgba(' + strokeColour[0] + ', ' + strokeColour[1] + ' ,' + strokeColour[2] + ', ' + alpha + ')';
@@ -881,7 +842,7 @@ function getColourForIndex(pointDistance) {
             return g_steps[i].colour;
         }
     }
-    console.log("Invalid colour/points distance")
+    console.log("Invalid colour/points distance");
     return [0, 0, 0];
 }
 
@@ -898,38 +859,6 @@ function drawTriangles(canvasContext, triangles, colour) {
     }
     canvasContext.stroke();
 }
-
-function drawClosingPolygon(ctx, inPoints, showFillEffect) {
-    if (inPoints.length == 0) {
-        return;
-    }
-
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.0)';
-    ctx.beginPath();
-
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, 512);
-    ctx.lineTo(512, 512);
-    ctx.lineTo(512, 0);
-    ctx.closePath();
-
-    ctx.moveTo(inPoints[0].x, inPoints[0].y);
-    for (var i = 1; i < inPoints.length; i++) {//i = 1 to skip first point
-        var currentPoint = inPoints[i];
-        ctx.lineTo(currentPoint.x, currentPoint.y);
-    }
-    ctx.closePath();
-
-    //fill
-    ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
-    if (showFillEffect) {
-        ctx.fillStyle = 'rgba(242, 242, 242, 0.3)';
-        ctx.strokeStyle = 'rgba(255, 0, 0, 0.9)';
-    }
-    ctx.fill('evenodd'); //for firefox 31+, IE 11+, chrome
-    //ctx.stroke();
-};
-
 
 function isPointInPolygon(point, vs) {
     // ray-casting algorithm based on
@@ -948,7 +877,7 @@ function isPointInPolygon(point, vs) {
     }
 
     return inside;
-};
+}
 
 function filterKeypointsOutsidePolygon(keypoints, coords) {
     if (coords.length == 0) {
@@ -961,18 +890,6 @@ function filterKeypointsOutsidePolygon(keypoints, coords) {
         if (isPointInPolygon(keypoint, coords)) {
             ret.push(keypoint);
         }
-    }
-    return ret;
-}
-
-function getTransformedCroppingPointsMatrix(croppingPoints, transformationMatrix) {
-    var ret = [];
-    for (var i = 0; i < croppingPoints.length; i++) {
-        var point = croppingPoints[i];
-        var point2 = convertSingleKeypointToMatrix(point);
-        var transformedPoint = applyTransformationMatToSingleKeypoint(point2, transformationMatrix);
-        var point3 = convertSingleMatrixKeypoinToKeypointObject(transformedPoint);
-        ret.push(point3);
     }
     return ret;
 }
@@ -1821,7 +1738,7 @@ function handleMouseMoveOnDocument(e) {
 }
 
 function drawLayerImageOutline(ctx, imageOutlinePolygon) {
-    if (imageOutlinePolygon.length == 0) {
+    if (imageOutlinePolygon.length === 0) {
         return;
     }
 
@@ -1924,7 +1841,7 @@ function handleMouseDownOnCanvas(e) {
 }
 
 function applyTransformationEffects(state) {
-    if (state == enum_TransformationOperation.TRANSLATE) {
+    if (state === enum_TransformationOperation.TRANSLATE) {
         $(".twoCanvasWrapper").addClass("move");
     } else {
         $(".twoCanvasWrapper").removeClass("move");
