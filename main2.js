@@ -40,12 +40,12 @@ const REFERENCE_CANVAS_IMAGE_OUTLINE_ID = "databaseImageCanvasImageOutline";
 const REFERENCE_FRAGMENT_CANVAS_ID = "fragmentCanvas2";
 const REFERENCE_HIGHLIGHTED_CANVAS_ID = "databaseImageCanvasHighlightedTriangle";
 
-var g_numberOfKeypoints = 30;
+var g_numberOfKeypoints = 40;
 const MIN_CROPPING_POLYGON_AREA = 600;
 
 const ORANGE_COLOUR = [255, 87, 34];
 const BLUE_COLOUR = [33, 150, 243];
-
+var setAlpha = false;
 function newStep(minPntDist, maxPntDist, minTriArea, colour) {
     return {
         minPntDist: minPntDist,
@@ -562,7 +562,11 @@ function convertTransformationObjectToTransformationMatrix(transformations) {
     ret = matrixMultiply(ret, getScaleMatrix(transformations.uniformScale, transformations.uniformScale));
 
     //Rotate
+    ret = matrixMultiply(ret, getTranslateMatrix(-transformations.translate.x, -transformations.translate.y));
+
     ret = matrixMultiply(ret, getRotatoinMatrix(-transformations.rotation));
+
+    ret = matrixMultiply(ret, getTranslateMatrix(transformations.translate.x, transformations.translate.y));
 
     //Scale
     ret = matrixMultiply(ret, transformations.directionalScaleMatrix);
@@ -847,7 +851,10 @@ function drawLineFromPointToMousePosition(ctx) {
 }
 
 function drawTriangleWithColour(ctx, tri, strokeColour, fillColour, enableFill) {
-    var alpha = 1.0;
+    var alpha = 0.8;
+    if(setAlpha)
+        alpha = .1;
+
     ctx.strokeStyle = 'rgba(' + strokeColour[0] + ', ' + strokeColour[1] + ' ,' + strokeColour[2] + ', ' + alpha + ')';
     //ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
     ctx.beginPath();
@@ -1263,7 +1270,9 @@ function getNonOccludedKeypoints(keypoints, layers) {
 }
 
 function drawUiLayer(canvasContext, keypoints, triangles, layerColour) {
-    drawKeypoints(canvasContext, keypoints);
+    if (!setAlpha){
+        drawKeypoints(canvasContext, keypoints);
+    }
     drawTriangles(canvasContext, triangles, layerColour);
 }
 
@@ -1280,11 +1289,14 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     }
     var transformationsMat = drawingLayer.layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
-    if (canvasState == g_globalState.interactiveCanvasState && !g_drawingOptions.drawInteractiveCanvasUiLayer) {
 
+    if (canvasState == g_globalState.interactiveCanvasState) {
+        setAlpha = true;
     } else {
-        drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
+        setAlpha = false;
     }
+
+    drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
 }
 
 function clearOutputListAndWipeCanvas() {
@@ -1646,6 +1658,8 @@ $("#" + INTERACTIVE_CANVAS_OVERLAY_ID).mousemove(function (e) {
     if (g_globalState == null || g_globalState.activeCanvas != g_globalState.interactiveCanvasState) {
         return;
     }
+    var canvasMousePosition = getCurrentCanvasMousePosition(e);
+    console.log(canvasMousePosition);
 
     if (g_globalState.isMouseDownAndClickedOnCanvas) {
         handleMouseMoveOnCanvas(e);
@@ -1903,7 +1917,6 @@ function drawLayerImageOutline(ctx, imageOutlinePolygon) {
 
 function handleMouseMoveOnCanvas(e) {
     var canvasMousePosition = getCurrentCanvasMousePosition(e);
-
 
     switch (g_globalState.currentTranformationOperationState) {
         case enum_TransformationOperation.TRANSLATE:
