@@ -121,8 +121,7 @@ function newGlobalState() {
 }
 
 function reset() {
-    console.log("Reset called.");
-    //TODO: FIXME
+    init();
 }
 
 var enum_TransformationOperation = {
