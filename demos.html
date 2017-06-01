@@ -617,10 +617,8 @@
         g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
         animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
         var frameStart = 0;
-        for (var i = frameStart; /*break on return value*/; i++) {
-            if (computeFrame(i)) {
-                break;
-            }
+        for (var i = frameStart; i < 100; i++) {
+            window.requestAnimationFrame(computeFrame(i));
         } 
 
     }
