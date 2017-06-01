@@ -579,8 +579,17 @@
 
 
     //returns true when finished
-    function computeFrame(frame){
-        return animation1(frame);
+    function computeFrames(frame){
+        if (frame > 99) {
+            return
+        }
+
+        animation1(frame)
+        
+        let nextFrame = frame + 1;
+        window.requestAnimationFrame(function () {
+                computeFrames(nextFrame);
+            });
     }
 
     function startAnimation() {
@@ -617,13 +626,8 @@
         g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
         animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
         var frameStart = 0;
-        for (var i = frameStart; i < 100; i++) {
-            let value = i * 1;
-            window.requestAnimationFrame(function () {
-                console.log("computeFrameCalled: " + value);
-                computeFrame(value);
-            });
-        } 
+
+        computeFrames(0)
 
     }
 
