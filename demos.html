@@ -395,7 +395,7 @@
                             <canvas class="canvasShadow" id="fragmentCanvas2" height="160" width="160"></canvas>
                         </div>
                     </div>
-
+                    <canvas id="bigCanvas" width="700" height="600"></canvas>
                 </div>
             </div>
         </div>
@@ -422,16 +422,11 @@
     var animationStartTime;
     var end = false;
     var animationStartMatrix;
-    var endx = 80;
-    var endy = 80;
     var mult = 1;
 
 
     function animation7(frame) {
         var animationFrames = 120*mult;
-        if(frame >= animationFrames){
-            return true;
-        }
 
         animationStart();
         
@@ -439,14 +434,12 @@
         g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:310,y:215};
         g_globalState.temporaryAppliedTransformations.uniformScale = (5*percentageDone) + 1;
 
-        animationEnd();
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
     function animation6(frame) {
         var animationFrames = 120*mult;
-        if(frame >= animationFrames){
-            return true;
-        }
 
         animationStart();
         
@@ -454,15 +447,12 @@
         g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:310,y:215};
         g_globalState.temporaryAppliedTransformations.uniformScale = (1/(percentageDone*2 + 1));
 
-        animationEnd();
-        return false;
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
     function animation5(frame) {
         var animationFrames = 120*mult;
-        if(frame >= animationFrames){
-            return true;
-        }
 
         animationStart();
         
@@ -474,15 +464,12 @@
             y: -endy*percentageDone
         };
 
-        animationEnd();
-        return false;
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
     function animation4(frame) {
         var animationFrames = 120*mult;
-        if(frame >= animationFrames){
-            return true;
-        }
 
         animationStart();
         
@@ -494,15 +481,12 @@
             y: -endy*percentageDone
         };
 
-        animationEnd();
-        return false;
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
     function animation3(frame) {
         var animationFrames = 120*mult;
-        if(frame >= animationFrames){
-            return true;
-        }
 
         animationStart();
         
@@ -514,15 +498,12 @@
             y: -endy*percentageDone
         };
 
-        animationEnd();
-        return false;
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
     function animation2(frame) {
         var animationFrames = 120*mult;
-        if(frame >= animationFrames){
-            return true;
-        }
 
         animationStart();
         
@@ -534,34 +515,25 @@
         var scaleMatrix = getDirectionalScaleMatrix(Math.sqrt(scale), 1 / Math.sqrt(scale), 45);
         g_globalState.temporaryAppliedTransformations.directionalScaleMatrix = scaleMatrix;
 
-        animationEnd();
-        return false;
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
     function animation1(frame) {
         var animationFrames = 60*mult;
-        if(frame >= animationFrames){
-            return true;
-        }
 
         animationStart();
         
         var percentageDone = frame/animationFrames;
+        var endx = 80;
+        var endy = 80;
         g_globalState.temporaryAppliedTransformations.translate = {
             x: -endx*percentageDone,
             y: -endy*percentageDone
         };
 
-        animationEnd();
-        return false;
-    }
-
-    function resetAnimationState() {
-            g_globalState.forceTempAnimations = true;
-            g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
-            animationStartTime = new Date();
-            g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-            animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
     function animationStart() {
@@ -578,16 +550,73 @@
             ]; 
     }
 
-    function animationEnd() {
+    var g_frame = 1;
+
+
+
+    function drawAllImagesToCanvasAndSend(g_frame) {
+//        var canvas = document.createElement('canvas'),
+//            ctx = canvas.getContext('2d');
+//        canvas.width = 700;
+//        canvas.height = 600;
+        var canvas = document.getElementById('bigCanvas'),
+            ctx = canvas.getContext('2d');
+        paintCanvasWhite(ctx);
+
+        var ctx1= document.getElementById('queryImageCanvasImageContent');
+        var ctx2= document.getElementById('queryImageCanvasUiOverlay');
+        var ctx3= document.getElementById('databaseImageCanvasImageContent');
+        var ctx4= document.getElementById('databaseImageCanvasUiOverlay');
+
+        ctx.drawImage(ctx1, 0, 0);
+        ctx.drawImage(ctx2, 0, 0);
+        ctx.drawImage(ctx3, 0, 325);
+        ctx.drawImage(ctx4, 0, 325);
+
+
+
+        var image1 = canvas.toDataURL('image/jpeg', 0.92).replace("image/jpeg", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.
+//
+        var regex = /^data:.+\/(.+);base64,(.*)$/;
+        var matches;
+        matches = image1.match(regex);
+        var data1 = matches[2];
+
+        var info = {
+            'image1': {
+                'imageData': data1,
+                'frameNumber': g_frame
+            }
+        };
+
+        $.ajax({
+            url: 'http://127.0.0.1/runTestWithJsonData',
+            type: 'POST',
+            data: JSON.stringify(info),
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            async: true,
+            success: function (msg) {
+                console.log(msg);
+            },
+            error: function (msg) {
+                console.log(msg);
+            }
+        });
+    }
+
+    function animationEnd(frame) {
         applyTemporaryTransformationsToActiveLayer();
         wipeTemporaryAppliedTransformations();
 
         draw();
+        drawAllImagesToCanvasAndSend(g_frame);
     }
 
     var currentAnimation = 0;
     var prevAnimationsFrameCount = 0;
     function doAnimations(frame) {
+        g_frame = frame;//HACK
         var isDone = false;
         switch(currentAnimation) {
             case 0:
@@ -616,8 +645,12 @@
         }
 
         if(isDone){
-            resetAnimationState();
-            prevAnimationsFrameCount += frame;
+            g_globalState.forceTempAnimations = true;
+            g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
+            animationStartTime = new Date();
+            g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
+            animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
+            prevAnimationsFrameCount = frame;
             currentAnimation++;
         }
     }
@@ -669,7 +702,7 @@
         animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
         var frameStart = 0;
 
-        computeFrames(0)
+        computeFrames(1)
 
     }
 
