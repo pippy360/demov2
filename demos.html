@@ -425,14 +425,11 @@
     var endx = 80;
     var endy = 80;
     var mult = 1;
- 
-
 
 
     function animation7(frame) {
         var animationFrames = 120*mult;
         if(frame > animationFrames){
-            resetAnimationState();
             return true;
         }
 
@@ -448,8 +445,7 @@
     function animation6(frame) {
         var animationFrames = 120*mult;
         if(frame > animationFrames){
-            resetAnimationState();
-            return animation7(frame - animationFrames);
+            return true;
         }
 
         animationStart();
@@ -465,8 +461,7 @@
     function animation5(frame) {
         var animationFrames = 120*mult;
         if(frame > animationFrames){
-            resetAnimationState();
-            return animation6(frame - animationFrames);
+            return true;
         }
 
         animationStart();
@@ -486,8 +481,7 @@
     function animation4(frame) {
         var animationFrames = 120*mult;
         if(frame > animationFrames){
-            resetAnimationState();
-            return animation5(frame - animationFrames);
+            return true;
         }
 
         animationStart();
@@ -507,8 +501,7 @@
     function animation3(frame) {
         var animationFrames = 120*mult;
         if(frame > animationFrames){
-            resetAnimationState();
-            return animation4(frame - animationFrames);
+            return true;
         }
 
         animationStart();
@@ -549,8 +542,7 @@
     function animation1(frame) {
         var animationFrames = 60*mult;
         if(frame > animationFrames){
-            resetAnimationState();
-            return animation2(frame - animationFrames);
+            return true;
         }
 
         animationStart();
@@ -586,10 +578,46 @@
         draw();
     }
 
+    var currentAnimation = 0;
+    var prevAnimationsFrameCount = 0;
+    function doAnimations(frame) {
+        var isDone = false;
+        switch(currentAnimation) {
+            case 0:
+                isDone = animation1(frame);
+                break;
+            case 1:
+                isDone = animation2(frame-prevAnimationsFrameCount);
+                break;
+            case 2:
+                isDone = animation3(frame-prevAnimationsFrameCount);
+                break;
+            case 3:
+                isDone = animation4(frame-prevAnimationsFrameCount);
+                break;
+            case 4:
+                isDone = animation5(frame-prevAnimationsFrameCount);
+                break;
+            case 5:
+                isDone = animation6(frame-prevAnimationsFrameCount);
+                break;
+            case 6:
+                isDone = animation7(frame-prevAnimationsFrameCount);
+                break;                
+            default:
+                return true;
+        }
+
+        if(isDone){
+            resetAnimationState();
+            prevAnimationsFrameCount += frame;
+            currentAnimation++;
+        }
+    }
 
     //returns true when finished
     function computeFrames(frame){
-        if (animation1(frame)) {
+        if (doAnimations(frame)) {
             return
         }
 
