@@ -567,8 +567,16 @@
 
     function animationStart() {
         g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
-        g_globalState.transformationMatBeforeTemporaryTransformations = animationStartMatrix.slice(0);
+        g_globalState.transformationMatBeforeTemporaryTransformations = deepMatrixClone(animationStartMatrix);
         wipeTemporaryAppliedTransformations();
+    }
+
+    function deepMatrixClone(inputMat) {
+        return[
+            inputMat[0].slice(0), 
+            inputMat[1].slice(1), 
+            inputMat[2].slice(2),
+            ]; 
     }
 
     function animationEnd() {
