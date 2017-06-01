@@ -535,6 +535,7 @@
         animationStart();
         
         var percentageDone = frame/animationFrames;
+        var endRotation = 120;
         g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:80+150,y:80+150};
         g_globalState.temporaryAppliedTransformations.rotation = percentageDone * endRotation;
         var scale = (2*percentageDone)+1;
@@ -588,11 +589,9 @@
 
     //returns true when finished
     function computeFrames(frame){
-        if (frame > 99) {
+        if (animation1(frame)) {
             return
         }
-
-        animation1(frame)
 
         let nextFrame = frame + 1;
         window.requestAnimationFrame(function () {
