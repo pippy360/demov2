@@ -618,8 +618,11 @@
         animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
         var frameStart = 0;
         for (var i = frameStart; i < 100; i++) {
-            console.log("computeFrameCalled: " + i);
-            window.requestAnimationFrame(computeFrame(i));
+            var value = i * 1;
+            window.requestAnimationFrame(function () {
+                console.log("computeFrameCalled: " + value);
+                computeFrame(value);
+            });
         } 
 
     }
