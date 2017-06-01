@@ -521,8 +521,7 @@
     function animation2(frame) {
         var animationFrames = 120*mult;
         if(frame >= animationFrames){
-            resetAnimationState();
-            return animation3(frame - animationFrames);
+            return true;
         }
 
         animationStart();
