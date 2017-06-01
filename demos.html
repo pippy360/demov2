@@ -566,6 +566,7 @@
     }
 
     function animationStart() {
+        g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
         g_globalState.transformationMatBeforeTemporaryTransformations = animationStartMatrix;
         wipeTemporaryAppliedTransformations();
     }
@@ -585,7 +586,7 @@
         }
 
         animation1(frame)
-        
+
         let nextFrame = frame + 1;
         window.requestAnimationFrame(function () {
                 computeFrames(nextFrame);
