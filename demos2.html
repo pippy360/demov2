@@ -562,6 +562,18 @@
             });
     }
 
+    function cutOutTheTriangles() {
+        layer = g_globalState.referenceCanvasState.layers[0];
+
+        let drawingImage = cropLayerImage(layer.image, layer.nonTransformedImageOutline);
+
+        let canvas = document.getElementById('bigCanvas'),
+            ctx = canvas.getContext('2d');
+        paintCanvasWhite(ctx);
+        ctx.drawImage(drawingImage, 0, 0);
+    }
+    
+
     function startAnimation() {
 
         //set the keypoints
@@ -586,7 +598,7 @@
         g_globalState.temporaryAppliedTransformations.uniformScale = 0.7;
         g_globalState.temporaryAppliedTransformations.translate = {
             x: 0,
-            y: 40
+            y: 10
         };
 
 //        g_globalState.temporaryAppliedTransformations.rotation = 90;
@@ -601,7 +613,7 @@
         // var frameStart = 0;
 
         // computeFrames(1)
-
+        cutOutTheTriangles();
     }
 
 </script>
