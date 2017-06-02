@@ -2101,7 +2101,6 @@ function loadImageAndInit(imageSrc) {
     _g_preloadImage.src = imageSrc;
     _g_preloadImage.onload = function () {
         initAfterImageLoad();
-        _debug_addlayer('images/background_resize.jpg');
     };
 }
 
