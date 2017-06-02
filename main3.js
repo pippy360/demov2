@@ -853,7 +853,7 @@ function drawLineFromPointToMousePosition(ctx) {
 function drawTriangleWithColour(ctx, tri, strokeColour, fillColour, enableFill) {
     var alpha = 0.8;
     if(setAlpha)
-        alpha = .05;
+        alpha = .8;
 
     ctx.strokeStyle = 'rgba(' + strokeColour[0] + ', ' + strokeColour[1] + ' ,' + strokeColour[2] + ', ' + alpha + ')';
     //ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
