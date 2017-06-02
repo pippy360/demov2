@@ -535,17 +535,30 @@
     }
 
     function cutOutTheTriangles() {
-        let layer = g_globalState.referenceCanvasState.layers[0];
         let keypoints = g_globalState.interactiveCanvasState.layers[0].keypoints;
+
+        let imageFragment1;
         let shape = [keypoints[0], keypoints[1], keypoints[2]];
-        let transformedShape = applyTransformationMatrixToAllKeypointsObjects(shape, layer.appliedTransformations);
-        let referenceCanvas = g_globalState.referenceCanvasState.imageLayerCanvas;
-        let drawingImage = cropLayerImage(referenceCanvas, transformedShape);
+        {
+            let layer1 = g_globalState.referenceCanvasState.layers[0];
+            let transformedShape1 = applyTransformationMatrixToAllKeypointsObjects(shape, layer1.appliedTransformations);
+            let referenceCanvas = g_globalState.referenceCanvasState.imageLayerCanvas;
+            imageFragment1 = cropLayerImage(referenceCanvas, transformedShape1);
+        }
+
+        let imageFragment2;
+        {
+            let layer2 = g_globalState.interactiveCanvasState.layers[0];
+            let transformedShape2 = applyTransformationMatrixToAllKeypointsObjects(shape, layer2.appliedTransformations);
+            let interactiveCanvas = g_globalState.interactiveCanvasState.imageLayerCanvas;
+            imageFragment2 = cropLayerImage(interactiveCanvas, transformedShape2);
+        }
 
         let canvas = document.getElementById('bigCanvas'),
             ctx = canvas.getContext('2d');
         paintCanvasWhite(ctx);
-        ctx.drawImage(drawingImage, 0, 0);
+        ctx.drawImage(imageFragment1, 0, 0);
+        ctx.drawImage(imageFragment2, 0, 0);
     }
     
 
