@@ -350,9 +350,20 @@
                     </div>
                 </div>
                 <div id="output">
-                    <br>
-                    <br>
 
+                    <br>
+                    <div class="smallCanvasWrapper" style="display:none">
+                        <div class="fragmentCanvasWrapper">
+                            <canvas class="canvasShadow" id="fragmentCanvas1" height="160" width="160"></canvas>
+                        </div>
+                        <div class="distanceOutput">
+                            <label class="distanceOutputTitle">Perceptual hash distance:</label>
+                            <label id="pHashDistanceOutputWrapper" class="distanceOutputData"> 0 </label>
+                        </div>
+                        <div class="fragmentCanvasWrapper">
+                            <canvas class="canvasShadow" id="fragmentCanvas2" height="160" width="160"></canvas>
+                        </div>
+                    </div>
                     <canvas id="bigCanvas" width="700" height="600"></canvas>
                 </div>
             </div>
@@ -556,7 +567,7 @@
         g_globalState.temporaryAppliedTransformations.uniformScale = 0.7;
         g_globalState.temporaryAppliedTransformations.translate = {
             x: 0,
-            y: 20
+            y: 10
         };
 
 //        g_globalState.temporaryAppliedTransformations.rotation = 90;
