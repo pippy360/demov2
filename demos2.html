@@ -572,17 +572,6 @@
             imageWithWhiteTri1 = interactiveCanvas            
         }
 
-        {
-            drawPolygonPath(canvasContext, buildRect(canvasContext.canvas.width, canvasContext.canvas.height));
-            drawPolygonPath(canvasContext, imageOutline);
-            canvasContext.globalCompositeOperation = 'source-over';
-            canvasContext.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            canvasContext.fill('evenodd');
-        }
-
-
-
-
         let canvas = document.getElementById('bigCanvas'),
             ctx = canvas.getContext('2d');
 
