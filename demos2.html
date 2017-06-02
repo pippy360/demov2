@@ -433,13 +433,13 @@
 
         animationStart();
         
-        var percentageDone = frame/animationFrames;
-        var endx = 80;
-        var endy = 80;
-        g_globalState.temporaryAppliedTransformations.translate = {
-            x: -endx*percentageDone,
-            y: -endy*percentageDone
-        };
+        // var percentageDone = frame/animationFrames;
+        // var endx = 80;
+        // var endy = 80;
+        // g_globalState.temporaryAppliedTransformations.translate = {
+        //     x: -endx*percentageDone,
+        //     y: -endy*percentageDone
+        // };
 
         animationEnd(frame);
         return (frame >= animationFrames);
@@ -564,34 +564,28 @@
 
     function startAnimation() {
 
-        reset();
         g_drawingOptions.drawImageOutline = false;
         g_drawingOptions.drawInteractiveCanvasUiLayer = true;//false;
-        changeInteractiveCanvasSize(520, 325);
-        changeReferenceCanvasSize(700, 275);
 
-        g_globalState.activeCanvas = g_globalState.referenceCanvasState;
 
-        g_globalState.activeCanvas.activeLayer = g_globalState.referenceCanvasState.layers[0];
-        g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-//        g_globalState.temporaryAppliedTransformations.uniformScale = 0.846153847;
-        g_globalState.temporaryAppliedTransformations.translate = {
-            x: -440,
-            y: 0
-        };
-//        g_globalState.temporaryAppliedTransformations.rotation = 90;
-        applyTemporaryTransformationsToActiveLayer();
-        wipeTemporaryAppliedTransformations();
+        
 
 
         g_globalState.activeCanvas.activeLayer = g_globalState.referenceCanvasState.layers[1];
         g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-        g_globalState.temporaryAppliedTransformations.uniformScale = 0.846153847;
+
+        g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:140,y:140};
+        g_globalState.temporaryAppliedTransformations.rotation = 120;
+        var scale = 3;
+        var scaleMatrix = getDirectionalScaleMatrix(Math.sqrt(scale), 1 / Math.sqrt(scale), 45);
+        g_globalState.temporaryAppliedTransformations.directionalScaleMatrix = scaleMatrix;
+
 //        g_globalState.temporaryAppliedTransformations.rotation = 90;
         applyTemporaryTransformationsToActiveLayer();
         wipeTemporaryAppliedTransformations();
 
         draw();
+
         animationStartTime = new Date();
         g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
         animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
