@@ -534,31 +534,64 @@
             });
     }
 
+
     function cutOutTheTriangles() {
         let keypoints = g_globalState.interactiveCanvasState.layers[0].keypoints;
 
         let imageFragment1;
+        let imageWithWhiteTri1;
         let shape = [keypoints[0], keypoints[1], keypoints[2]];
         {
             let layer1 = g_globalState.referenceCanvasState.layers[0];
             let transformedShape1 = applyTransformationMatrixToAllKeypointsObjects(shape, layer1.appliedTransformations);
             let referenceCanvas = g_globalState.referenceCanvasState.imageLayerCanvas;
+            let referenceCanvasContext = g_globalState.referenceCanvasState.imageLayerCanvasContext;
             imageFragment1 = cropLayerImage(referenceCanvas, transformedShape1);
+
+            referenceCanvasContext.beginPath();
+            drawPolygonPath(referenceCanvasContext, transformedShape1);
+            referenceCanvasContext.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            referenceCanvasContext.fill();
+            imageWithWhiteTri1 = referenceCanvas
         }
 
         let imageFragment2;
+        let imageWithWhiteTri2;
         {
             let layer2 = g_globalState.interactiveCanvasState.layers[0];
             let transformedShape2 = applyTransformationMatrixToAllKeypointsObjects(shape, layer2.appliedTransformations);
             let interactiveCanvas = g_globalState.interactiveCanvasState.imageLayerCanvas;
+            let interactiveCanvasContext = g_globalState.interactiveCanvasState.imageLayerCanvasContext;
             imageFragment2 = cropLayerImage(interactiveCanvas, transformedShape2);
+
+            interactiveCanvasContext.beginPath();
+            drawPolygonPath(interactiveCanvasContext, transformedShape2);
+            interactiveCanvasContext.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            interactiveCanvasContext.fill();
+
+            imageWithWhiteTri1 = interactiveCanvas            
         }
+
+        {
+            drawPolygonPath(canvasContext, buildRect(canvasContext.canvas.width, canvasContext.canvas.height));
+            drawPolygonPath(canvasContext, imageOutline);
+            canvasContext.globalCompositeOperation = 'source-over';
+            canvasContext.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            canvasContext.fill('evenodd');
+        }
+
+
+
 
         let canvas = document.getElementById('bigCanvas'),
             ctx = canvas.getContext('2d');
+
         paintCanvasWhite(ctx);
-        ctx.drawImage(imageFragment1, 0, 0);
-        ctx.drawImage(imageFragment2, 0, 0);
+
+        ctx.drawImage(imageWithWhiteTri2, 0, 0);
+
+        ctx.drawImage();
+
     }
     
 
