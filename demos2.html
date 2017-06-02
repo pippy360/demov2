@@ -536,8 +536,8 @@
 
     function cutOutTheTriangles() {
         layer = g_globalState.referenceCanvasState.layers[0];
-
-        let drawingImage = cropLayerImage(layer.image, layer.nonTransformedImageOutline);
+        keypoints = g_globalState.interactiveCanvasState.layers[0].keypoints;
+        let drawingImage = cropLayerImage(layer.image, [keypoints[0], keypoints[1], keypoints[2]]);
 
         let canvas = document.getElementById('bigCanvas'),
             ctx = canvas.getContext('2d');
