@@ -536,6 +536,7 @@
 
 
     function cutOutTheTriangles() {
+        draw();
         let keypoints = g_globalState.interactiveCanvasState.layers[0].keypoints;
 
         let imageFragment1;
@@ -566,7 +567,7 @@
 
             interactiveCanvasContext.beginPath();
             drawPolygonPath(interactiveCanvasContext, transformedShape2);
-            interactiveCanvasContext.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            interactiveCanvasContext.fillStyle = 'rgba(255, 255, 255, 1.0)';
             interactiveCanvasContext.fill();
 
             imageWithWhiteTri2 = interactiveCanvas            
@@ -577,9 +578,9 @@
 
         paintCanvasWhite(ctx);
 
-        ctx.drawImage(imageWithWhiteTri2, 0, 0);
+        ctx.drawImage(imageWithWhiteTri1, 0, 0);
+        ctx.drawImage(imageWithWhiteTri2, 280, 0);
 
-        ctx.drawImage();
 
     }
     
