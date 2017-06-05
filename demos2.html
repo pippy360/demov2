@@ -541,23 +541,77 @@
         }
     }
 
+    function send(g_frame){
+
+        var canvas = document.getElementById('bigCanvas'),
+            ctx = canvas.getContext('2d');
+
+        var image1 = canvas.toDataURL('image/jpeg', 0.92).replace("image/jpeg", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.
+
+        var regex = /^data:.+\/(.+);base64,(.*)$/;
+        var matches;
+        matches = image1.match(regex);
+        var data1 = matches[2];
+
+        var info = {
+            'image1': {
+                'imageData': data1,
+                'frameNumber': g_frame
+            }
+        };
+
+        $.ajax({
+            url: 'http://127.0.0.1/runTestWithJsonData',
+            type: 'POST',
+            data: JSON.stringify(info),
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            async: true,
+            success: function (msg) {
+                console.log(msg);
+            },
+            error: function (msg) {
+                console.log(msg);
+            }
+        });
+
+    }
+
     function cutOutTheTriangles(frame) {
 //        console.log(frame);
         let maxFrames = 100;
-        if (frame == maxFrames){
-            let canvas = document.getElementById('bigCanvas'),
-                ctx = canvas.getContext('2d');
-            ctx.font = "20px Arial";
-            ctx.fillStyle = 'rgba(0, 0, 0, 1.0)';
-            ctx.fillText("Image hash:",0,500);
-            ctx.fillText("6F1C34E836CC8EC2",0,525);
-            ctx.fillText("Image hash:",400,500);
-            ctx.fillText("6F1C44E836CC8EC2",400,525);
+        if (frame >= maxFrames){
+            if(frame > maxFrames + 30) {
+                return;
+            }else if (frame == maxFrames) {
+                let canvas = document.getElementById('bigCanvas'),
+                    ctx = canvas.getContext('2d');
+                ctx.font = "20px Arial";
+                ctx.fillStyle = 'rgba(0, 0, 0, 1.0)';
+                ctx.fillText("Image hash:",0,500);
+                ctx.fillText("6F1C34E836CC8EC2",0,525);
+                ctx.fillText("Image hash:",400,500);
+                ctx.fillText("6F1C44E836CC8EC2",400,525);
 
-            ctx.fillText("Hash distance: 1",200,450);
-            ctx.fillText("MATCH",230,475);
+                ctx.fillText("Hash distance: 1",230,500);
+                ctx.fillText("MATCH",230,525);
 
-            return;
+                let nextFrame = frame + 1;
+                send(frame);
+                window.requestAnimationFrame(function () {
+                    cutOutTheTriangles(nextFrame);
+                });
+
+                return;
+            }else {
+                let nextFrame = frame + 1;
+                send(frame);
+                window.requestAnimationFrame(function () {
+                    cutOutTheTriangles(nextFrame);
+                });
+                return;
+            }
+
         }
         draw();
         let keypoints = g_globalState.interactiveCanvasState.layers[0].keypoints;
@@ -620,6 +674,8 @@
         ctx.drawImage(imageFragment2, 280, 0);
         ctx.restore();
         let nextFrame = frame + 1;
+        send(frame);
+
         window.requestAnimationFrame(function () {
             cutOutTheTriangles(nextFrame);
         });
