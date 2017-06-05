@@ -535,16 +535,40 @@
     }
 
 
-    function cutOutTheTriangles() {
+    function addToY(transformedShape2, number) {
+        for (var i = 0; i < transformedShape2.length; i++) {
+            transformedShape2[i].y += number;
+        }
+    }
+
+    function cutOutTheTriangles(frame) {
+//        console.log(frame);
+        let maxFrames = 100;
+        if (frame == maxFrames){
+            let canvas = document.getElementById('bigCanvas'),
+                ctx = canvas.getContext('2d');
+            ctx.font = "20px Arial";
+            ctx.fillStyle = 'rgba(0, 0, 0, 1.0)';
+            ctx.fillText("Image hash:",0,500);
+            ctx.fillText("6F1C34E836CC8EC2",0,525);
+            ctx.fillText("Image hash:",400,500);
+            ctx.fillText("6F1C44E836CC8EC2",400,525);
+
+            ctx.fillText("Hash distance: 1",200,450);
+            ctx.fillText("MATCH",230,475);
+
+            return;
+        }
         draw();
         let keypoints = g_globalState.interactiveCanvasState.layers[0].keypoints;
 
         let imageFragment1;
         let imageWithWhiteTri1;
         let shape = [keypoints[0], keypoints[1], keypoints[2]];
+        let transformedShape1 = [];
         {
             let layer1 = g_globalState.referenceCanvasState.layers[0];
-            let transformedShape1 = applyTransformationMatrixToAllKeypointsObjects(shape, layer1.appliedTransformations);
+            transformedShape1 = applyTransformationMatrixToAllKeypointsObjects(shape, layer1.appliedTransformations);
             let referenceCanvas = g_globalState.referenceCanvasState.imageLayerCanvas;
             let referenceCanvasContext = g_globalState.referenceCanvasState.imageLayerCanvasContext;
             imageFragment1 = cropLayerImage(referenceCanvas, transformedShape1);
@@ -558,9 +582,10 @@
 
         let imageFragment2;
         let imageWithWhiteTri2;
+        let transformedShape2;
         {
             let layer2 = g_globalState.interactiveCanvasState.layers[0];
-            let transformedShape2 = applyTransformationMatrixToAllKeypointsObjects(shape, layer2.appliedTransformations);
+            transformedShape2 = applyTransformationMatrixToAllKeypointsObjects(shape, layer2.appliedTransformations);
             let interactiveCanvas = g_globalState.interactiveCanvasState.imageLayerCanvas;
             let interactiveCanvasContext = g_globalState.interactiveCanvasState.imageLayerCanvasContext;
             imageFragment2 = cropLayerImage(interactiveCanvas, transformedShape2);
@@ -577,11 +602,27 @@
             ctx = canvas.getContext('2d');
 
         paintCanvasWhite(ctx);
-
+        let per = frame/maxFrames;
         ctx.drawImage(imageWithWhiteTri1, 0, 0);
+        ctx.save();
+        let mat = calcTransformationMatrixToEquilateralTriangle(transformedShape1);
+        mat = matrixMultiply(getTranslateMatrix(0, 300), mat);
+        ctx.transform(1+((mat[0][0]-1)*per), 0+(mat[1][0]-0)*per, 0+(mat[0][1]-0)*per, 1+(mat[1][1]-1)*per, 0+(mat[0][2]-0)*per, 0+(mat[1][2]-0)*per);
+        ctx.drawImage(imageFragment1, 0, 0);
+        ctx.restore();
+
         ctx.drawImage(imageWithWhiteTri2, 280, 0);
-
-
+        ctx.save();
+        mat = calcTransformationMatrixToEquilateralTriangle(transformedShape2);
+        mat = matrixMultiply(getTranslateMatrix(120, 300), mat);
+        console.log(mat);
+        ctx.transform(1+((mat[0][0]-1)*per), 0+(mat[1][0]-0)*per, 0+(mat[0][1]-0)*per, 1+(mat[1][1]-1)*per, 0+(mat[0][2]-0)*per, 0+(mat[1][2]-0)*per);
+        ctx.drawImage(imageFragment2, 280, 0);
+        ctx.restore();
+        let nextFrame = frame + 1;
+        window.requestAnimationFrame(function () {
+            cutOutTheTriangles(nextFrame);
+        });
     }
     
 
@@ -624,7 +665,9 @@
         // var frameStart = 0;
 
         // computeFrames(1)
-        cutOutTheTriangles();
+        window.requestAnimationFrame(function () {
+            cutOutTheTriangles(1);
+        });
     }
 
 </script>
