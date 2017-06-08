@@ -724,8 +724,6 @@
         reset();
         g_drawingOptions.drawImageOutline = false;
         g_drawingOptions.drawInteractiveCanvasUiLayer = true;//false;
-//        changeInteractiveCanvasSize(520, 325);
-//        changeReferenceCanvasSize(700, 275);
 
         g_globalState.activeCanvas = g_globalState.referenceCanvasState;
 
@@ -743,8 +741,6 @@
 
         g_globalState.activeCanvas.activeLayer = g_globalState.referenceCanvasState.layers[0];
         g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-//        g_globalState.temporaryAppliedTransformations.uniformScale = 0.846153847;
-//        g_globalState.temporaryAppliedTransformations.rotation = 90;
         applyTemporaryTransformationsToActiveLayer();
         wipeTemporaryAppliedTransformations();
 
@@ -752,10 +748,8 @@
         animationStartTime = new Date();
         g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
         animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
-        var frameStart = 0;
 
         computeFrames(1)
-
     }
 
 </script>
