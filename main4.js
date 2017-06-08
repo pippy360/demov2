@@ -851,9 +851,9 @@ function drawLineFromPointToMousePosition(ctx) {
 }
 
 function drawTriangleWithColour(ctx, tri, strokeColour, fillColour, enableFill) {
-    var alpha = 0.8;
+    var alpha = 0.01;
     if(setAlpha)
-        alpha = .8;
+        alpha = .01;
 
     ctx.strokeStyle = 'rgba(' + strokeColour[0] + ', ' + strokeColour[1] + ' ,' + strokeColour[2] + ', ' + alpha + ')';
     //ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
@@ -1296,7 +1296,7 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
         setAlpha = false;
     }
 
-    drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
+    //drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
 }
 
 function clearOutputListAndWipeCanvas() {

@@ -351,35 +351,7 @@
                 </div>
                 <div id="output">
                     <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
+    
                     <br>
 
                     <br>
@@ -413,7 +385,7 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
         integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
         crossorigin="anonymous"></script>
-<script src="main4.js"></script>
+<script src="main3.js"></script>
 
 <script>
 </script>
@@ -424,113 +396,22 @@
     var animationStartMatrix;
     var mult = 1;
 
-
-    function animation7(frame) {
-        var animationFrames = 60*mult;
-
-        animationStart();
-        
-        var percentageDone = frame/animationFrames;
-        g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:140,y:140};
-        g_globalState.temporaryAppliedTransformations.uniformScale = (5*percentageDone) + 1;
-
-        animationEnd(frame);
-        return (frame >= animationFrames);
-    }
-
-    function animation6(frame) {
-        var animationFrames = 60*mult;
-
-        animationStart();
-        
-        var percentageDone = frame/animationFrames;
-        g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:140,y:140};
-        g_globalState.temporaryAppliedTransformations.uniformScale = (1/(percentageDone*2 + 1));
-
-        animationEnd(frame);
-        return (frame >= animationFrames);
-    }
-
-    function animation5(frame) {
-        var animationFrames = 10*mult;
-
-        animationStart();
-        
-        var percentageDone = frame/animationFrames;
-        var endx = -20;
-        var endy = 30;
-        g_globalState.temporaryAppliedTransformations.translate = {
-            x: -endx*percentageDone,
-            y: -endy*percentageDone
-        };
-
-        animationEnd(frame);
-        return (frame >= animationFrames);
-    }
-
-    function animation4(frame) {
-        var animationFrames = 120*mult;
-
-        animationStart();
-        
-        var percentageDone = frame/animationFrames;
-        var endx = -50;
-        var endy = -100;
-        g_globalState.temporaryAppliedTransformations.translate = {
-            x: -endx*percentageDone,
-            y: -endy*percentageDone
-        };
-
-        animationEnd(frame);
-        return (frame >= animationFrames);
-    }
-
-    function animation3(frame) {
-        var animationFrames = 30*mult;//60*mult
-
-        animationStart();
-        
-        var percentageDone = frame/animationFrames;
-        var endx = 80;
-        var endy = 80;
-        g_globalState.temporaryAppliedTransformations.translate = {
-            x: -endx*percentageDone,
-            y: -endy*percentageDone
-        };
-
-        animationEnd(frame);
-        return (frame >= animationFrames);
-    }
-
     function animation2(frame) {
-        var animationFrames = 10;//120*mult;
-
-        animationStart();
-        
-        var percentageDone = frame/animationFrames;
-        var endRotation = 120;
-        g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:140,y:140};
-        g_globalState.temporaryAppliedTransformations.rotation = percentageDone * endRotation;
-        var scale = (2*percentageDone)+1;
-        var scaleMatrix = getDirectionalScaleMatrix(Math.sqrt(scale), 1 / Math.sqrt(scale), 45);
-        g_globalState.temporaryAppliedTransformations.directionalScaleMatrix = scaleMatrix;
-
-        animationEnd(frame);
-        return (frame >= animationFrames);
+        //show the phash
     }
 
     function animation1(frame) {
-        var animationFrames = 10*mult;
+        var animationFrames = 60*mult;
 
         animationStart();
-
-        var percentageDone = frame/animationFrames;
-        var endx = 0;
-        var endy = 0;
-        g_globalState.temporaryAppliedTransformations.translate = {
-            x: -endx*percentageDone,
-            y: -endy*percentageDone
-        };
+        
+        // var percentageDone = frame/animationFrames;
+        // var endx = 80;
+        // var endy = 80;
+        // g_globalState.temporaryAppliedTransformations.translate = {
+        //     x: -endx*percentageDone,
+        //     y: -endy*percentageDone
+        // };
 
         animationEnd(frame);
         return (frame >= animationFrames);
@@ -555,6 +436,7 @@
 
 
     function drawAllImagesToCanvasAndSend(g_frame) {
+        return;
 //        var canvas = document.createElement('canvas'),
 //            ctx = canvas.getContext('2d');
 //        canvas.width = 700;
@@ -570,8 +452,8 @@
 
         ctx.drawImage(ctx1, 0, 0);
         ctx.drawImage(ctx2, 0, 0);
-        ctx.drawImage(ctx3, 380, 0);
-        ctx.drawImage(ctx4, 380, 0);
+        ctx.drawImage(ctx3, 0, 325);
+        ctx.drawImage(ctx4, 0, 325);
 
 
 
@@ -605,64 +487,12 @@
         });
     }
 
-    function addToX(transformedShape2, number) {
-        for (var i = 0; i < transformedShape2.length; i++) {
-            transformedShape2[i].x += number;
-        }
-    }
-
-    function addToX2(transformedShape2, number) {
-        var ret = [];
-        for (var i = 0; i < transformedShape2.length; i++) {
-            var newPt = {
-                x: transformedShape2[i].x + number,
-                y: transformedShape2[i].y
-            };
-            ret.push(newPt);
-        }
-        return ret;
-    }
-
     function animationEnd(frame) {
         applyTemporaryTransformationsToActiveLayer();
         wipeTemporaryAppliedTransformations();
+
+        draw();
         drawAllImagesToCanvasAndSend(g_frame);
-
-        var canvas = document.getElementById('bigCanvas'),
-            ctx = canvas.getContext('2d');
-
-        var trans = g_globalState.interactiveCanvasState.layers[0].appliedTransformations;
-        ctx.strokeStyle = 'rgba(255,0,0,.03)';
-        ctx.lineWidth = 1;
-        var keypoints1 = [];
-        var keypoints2 = [];
-        var retVal = draw()[0];
-        var keys = retVal.keys();
-        for (var key = keys.next(), i = 0; !key.done; key = keys.next(), i++) { //iterate over keys
-            var tri = retVal.get(key.value);
-            var tri1 = tri.referenceTriangle;
-            var tri2 = tri.interactiveTriangle;
-            //tri2 = applyTransformationMatrixToAllKeypointsObjects(tri2, trans);
-            ctx.beginPath();
-
-            var pt1 =  getCenterPointOfPoly(tri1);
-            keypoints1.push({x: pt1[0], y: pt1[1]});
-            var pt2 =  getCenterPointOfPoly(tri2);
-            keypoints2.push({x: pt2[0], y: pt2[1]});
-            addToX(pt1, 380);
-            drawPolygonPath(ctx, [{x: pt1[0]+380, y: pt1[1]}, {x: pt2[0], y: pt2[1]}]);
-            ctx.stroke();
-        }
-
-        //var keypoints1 = g_globalState.interactiveCanvasState.layers[0].keypoints;
-        keypoints1 = addToX2(keypoints1, 380);
-        drawKeypoints(ctx, keypoints1);
-        keypoints2 = applyTransformationMatrixToAllKeypointsObjects(keypoints2, trans);
-        var imageOutline = g_globalState.referenceCanvasState.layers[0].nonTransformedImageOutline;
-        imageOutline = applyTransformationToImageOutline(imageOutline, trans);
-        keypoints2 = filterKeypointsOutsidePolygon(keypoints2, imageOutline);
-        keypoints2 = filterKeypointsOutsidePolygon(keypoints2, buildRect(280, 280));
-        drawKeypoints(ctx, keypoints2);
     }
 
     var currentAnimation = 0;
@@ -677,21 +507,6 @@
             case 1:
                 isDone = animation2(frame-prevAnimationsFrameCount);
                 break;
-            case 2:
-                isDone = animation3(frame-prevAnimationsFrameCount);
-                break;
-            case 3:
-                isDone = animation4(frame-prevAnimationsFrameCount);
-                break;
-            case 4:
-                isDone = animation5(frame-prevAnimationsFrameCount);
-                break;
-            case 5:
-                isDone = animation6(frame-prevAnimationsFrameCount);
-                break;
-            case 6:
-                isDone = animation7(frame-prevAnimationsFrameCount);
-                break;                
             default:
                 return true;
         }
@@ -719,43 +534,198 @@
             });
     }
 
+
+    function addToY(transformedShape2, number) {
+        for (var i = 0; i < transformedShape2.length; i++) {
+            transformedShape2[i].y += number;
+        }
+    }
+
+    function send(g_frame){
+
+        var canvas = document.getElementById('bigCanvas'),
+            ctx = canvas.getContext('2d');
+
+        var image1 = canvas.toDataURL('image/jpeg', 0.92).replace("image/jpeg", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.
+
+        var regex = /^data:.+\/(.+);base64,(.*)$/;
+        var matches;
+        matches = image1.match(regex);
+        var data1 = matches[2];
+
+        var info = {
+            'image1': {
+                'imageData': data1,
+                'frameNumber': g_frame
+            }
+        };
+
+        $.ajax({
+            url: 'http://127.0.0.1/runTestWithJsonData',
+            type: 'POST',
+            data: JSON.stringify(info),
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            async: true,
+            success: function (msg) {
+                console.log(msg);
+            },
+            error: function (msg) {
+                console.log(msg);
+            }
+        });
+
+    }
+
+    function cutOutTheTriangles(frame) {
+//        console.log(frame);
+        let maxFrames = 100;
+        if (frame >= maxFrames){
+            if(frame > maxFrames + 30) {
+                return;
+            }else if (frame == maxFrames) {
+                let canvas = document.getElementById('bigCanvas'),
+                    ctx = canvas.getContext('2d');
+                ctx.font = "20px Arial";
+                ctx.fillStyle = 'rgba(0, 0, 0, 1.0)';
+                ctx.fillText("Image hash:",0,500);
+                ctx.fillText("6F1C34E836CC8EC2",0,525);
+                ctx.fillText("Image hash:",400,500);
+                ctx.fillText("6F1C44E836CC8EC2",400,525);
+
+                ctx.fillText("Hash distance: 1",230,500);
+                ctx.fillText("MATCH",230,525);
+
+                let nextFrame = frame + 1;
+                send(frame);
+                window.requestAnimationFrame(function () {
+                    cutOutTheTriangles(nextFrame);
+                });
+
+                return;
+            }else {
+                let nextFrame = frame + 1;
+                send(frame);
+                window.requestAnimationFrame(function () {
+                    cutOutTheTriangles(nextFrame);
+                });
+                return;
+            }
+
+        }
+        draw();
+        let keypoints = g_globalState.interactiveCanvasState.layers[0].keypoints;
+
+        let imageFragment1;
+        let imageWithWhiteTri1;
+        let imageWithWhiteTri1;
+        let shape = [keypoints[0], keypoints[1], keypoints[2]];
+        let transformedShape1 = [];
+        {
+            let layer1 = g_globalState.referenceCanvasState.layers[0];
+            transformedShape1 = applyTransformationMatrixToAllKeypointsObjects(shape, layer1.appliedTransformations);
+            let referenceCanvas = g_globalState.referenceCanvasState.imageLayerCanvas;
+            let referenceCanvasContext = g_globalState.referenceCanvasState.imageLayerCanvasContext;
+            imageFragment1 = cropLayerImage(referenceCanvas, transformedShape1);
+
+            referenceCanvasContext.beginPath();
+            drawPolygonPath(referenceCanvasContext, transformedShape1);
+            referenceCanvasContext.fillStyle = 'rgba(255, 255, 255, 1.0)';
+            referenceCanvasContext.fill();
+            imageWithWhiteTri1 = referenceCanvas
+        }
+
+        let imageFragment2;
+        let imageWithWhiteTri2;
+        let transformedShape2;
+        {
+            let layer2 = g_globalState.interactiveCanvasState.layers[0];
+            transformedShape2 = applyTransformationMatrixToAllKeypointsObjects(shape, layer2.appliedTransformations);
+            let interactiveCanvas = g_globalState.interactiveCanvasState.imageLayerCanvas;
+            let interactiveCanvasContext = g_globalState.interactiveCanvasState.imageLayerCanvasContext;
+            imageFragment2 = cropLayerImage(interactiveCanvas, transformedShape2);
+
+            interactiveCanvasContext.beginPath();
+            drawPolygonPath(interactiveCanvasContext, transformedShape2);
+            interactiveCanvasContext.fillStyle = 'rgba(255, 255, 255, 1.0)';
+            interactiveCanvasContext.fill();
+
+            imageWithWhiteTri2 = interactiveCanvas            
+        }
+
+        let canvas = document.getElementById('bigCanvas'),
+            ctx = canvas.getContext('2d');
+
+        paintCanvasWhite(ctx);
+        let per = frame/maxFrames;
+        ctx.drawImage(imageWithWhiteTri1, 0, 0);
+        ctx.drawImage(imageWithWhiteTri1, 0, 0);
+        ctx.save();
+        let mat = calcTransformationMatrixToEquilateralTriangle(transformedShape1);
+        mat = matrixMultiply(getTranslateMatrix(0, 300), mat);
+        ctx.transform(1+((mat[0][0]-1)*per), 0+(mat[1][0]-0)*per, 0+(mat[0][1]-0)*per, 1+(mat[1][1]-1)*per, 0+(mat[0][2]-0)*per, 0+(mat[1][2]-0)*per);
+        ctx.drawImage(imageFragment1, 0, 0);
+        ctx.restore();
+
+        ctx.drawImage(imageWithWhiteTri2, 280, 0);
+        ctx.save();
+        mat = calcTransformationMatrixToEquilateralTriangle(transformedShape2);
+        mat = matrixMultiply(getTranslateMatrix(120, 300), mat);
+        console.log(mat);
+        ctx.transform(1+((mat[0][0]-1)*per), 0+(mat[1][0]-0)*per, 0+(mat[0][1]-0)*per, 1+(mat[1][1]-1)*per, 0+(mat[0][2]-0)*per, 0+(mat[1][2]-0)*per);
+        ctx.drawImage(imageFragment2, 280, 0);
+        ctx.restore();
+        let nextFrame = frame + 1;
+        send(frame);
+
+        window.requestAnimationFrame(function () {
+            cutOutTheTriangles(nextFrame);
+        });
+    }
+    
+
     function startAnimation() {
 
-        reset();
+        //set the keypoints
+        g_globalState.interactiveCanvasState.layers[0].keypoints = [
+            {x: 40, y: 40},
+            {x: 50, y: 200},
+            {x: 200, y: 40}
+        ]
+
         g_drawingOptions.drawImageOutline = false;
         g_drawingOptions.drawInteractiveCanvasUiLayer = true;//false;
-//        changeInteractiveCanvasSize(520, 325);
-//        changeReferenceCanvasSize(700, 275);
 
-        g_globalState.activeCanvas = g_globalState.referenceCanvasState;
-
-//        g_globalState.activeCanvas.activeLayer = g_globalState.referenceCanvasState.layers[0];
-//        g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-////        g_globalState.temporaryAppliedTransformations.uniformScale = 0.846153847;
-//        g_globalState.temporaryAppliedTransformations.translate = {
-//            x: -440,
-//            y: 0
-//        };
-////        g_globalState.temporaryAppliedTransformations.rotation = 90;
-//        applyTemporaryTransformationsToActiveLayer();
-//        wipeTemporaryAppliedTransformations();
-
-
+        g_globalState.activeCanvas = g_globalState.referenceCanvasState
         g_globalState.activeCanvas.activeLayer = g_globalState.referenceCanvasState.layers[0];
         g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-//        g_globalState.temporaryAppliedTransformations.uniformScale = 0.846153847;
+
+        g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:140,y:140};
+        g_globalState.temporaryAppliedTransformations.rotation = 120;
+        var scale = 3;
+        var scaleMatrix = getDirectionalScaleMatrix(Math.sqrt(scale), 1 / Math.sqrt(scale), 45);
+        g_globalState.temporaryAppliedTransformations.directionalScaleMatrix = scaleMatrix;
+        g_globalState.temporaryAppliedTransformations.uniformScale = 0.7;
+        g_globalState.temporaryAppliedTransformations.translate = {
+            x: 0,
+            y: 20
+        };
+
 //        g_globalState.temporaryAppliedTransformations.rotation = 90;
         applyTemporaryTransformationsToActiveLayer();
         wipeTemporaryAppliedTransformations();
 
         draw();
-        animationStartTime = new Date();
-        g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-        animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
-        var frameStart = 0;
 
-        computeFrames(1)
+        // animationStartTime = new Date();
+        // g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
+        // animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
+        // var frameStart = 0;
 
+        // computeFrames(1)
+        window.requestAnimationFrame(function () {
+            cutOutTheTriangles(1);
+        });
     }
 
 </script>
