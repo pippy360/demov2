@@ -395,7 +395,7 @@
                             <canvas class="canvasShadow" id="fragmentCanvas2" height="160" width="160"></canvas>
                         </div>
                     </div>
-                    <canvas id="bigCanvas" width="700" height="600"></canvas>
+                    <canvas id="bigCanvas" width="700" height="300"></canvas>
                 </div>
             </div>
         </div>
@@ -469,7 +469,7 @@
     }
 
     function animation4(frame) {
-        var animationFrames = 120*mult;
+        var animationFrames = 10*mult;
 
         animationStart();
         
@@ -486,7 +486,7 @@
     }
 
     function animation3(frame) {
-        var animationFrames = 30*mult;//60*mult
+        var animationFrames = 5*mult;//60*mult
 
         animationStart();
         
@@ -503,7 +503,7 @@
     }
 
     function animation2(frame) {
-        var animationFrames = 10;//120*mult;
+        var animationFrames = 20;//120*mult;
 
         animationStart();
         
@@ -520,7 +520,7 @@
     }
 
     function animation1(frame) {
-        var animationFrames = 10*mult;
+        var animationFrames = 20*mult;
 
         animationStart();
 
@@ -553,8 +553,7 @@
     var g_frame = 1;
 
 
-
-    function drawAllImagesToCanvasAndSend(g_frame) {
+    function theDrawPart(g_frame) {
 //        var canvas = document.createElement('canvas'),
 //            ctx = canvas.getContext('2d');
 //        canvas.width = 700;
@@ -573,36 +572,58 @@
         ctx.drawImage(ctx3, 380, 0);
         ctx.drawImage(ctx4, 380, 0);
 
+    }
 
 
-        var image1 = canvas.toDataURL('image/jpeg', 0.92).replace("image/jpeg", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.
+    function drawAllImagesToCanvasAndSend(g_frame) {
+
+//        var canvas = document.createElement('canvas'),
+//            ctx = canvas.getContext('2d');
+//        canvas.width = 700;
+//        canvas.height = 600;
+        var canvas = document.getElementById('bigCanvas'),
+            ctx = canvas.getContext('2d');
+        paintCanvasWhite(ctx);
+
+        var ctx1= document.getElementById('queryImageCanvasImageContent');
+        var ctx2= document.getElementById('queryImageCanvasUiOverlay');
+        var ctx3= document.getElementById('databaseImageCanvasImageContent');
+        var ctx4= document.getElementById('databaseImageCanvasUiOverlay');
+
+        ctx.drawImage(ctx1, 0, 0);
+        ctx.drawImage(ctx2, 0, 0);
+        ctx.drawImage(ctx3, 380, 0);
+        ctx.drawImage(ctx4, 380, 0);
+
 //
-        var regex = /^data:.+\/(.+);base64,(.*)$/;
-        var matches;
-        matches = image1.match(regex);
-        var data1 = matches[2];
-
-        var info = {
-            'image1': {
-                'imageData': data1,
-                'frameNumber': g_frame
-            }
-        };
-
-        $.ajax({
-            url: 'http://127.0.0.1/runTestWithJsonData',
-            type: 'POST',
-            data: JSON.stringify(info),
-            contentType: 'application/json; charset=utf-8',
-            dataType: 'json',
-            async: true,
-            success: function (msg) {
-                console.log(msg);
-            },
-            error: function (msg) {
-                console.log(msg);
-            }
-        });
+//        var image1 = canvas.toDataURL('image/jpeg', 0.92).replace("image/jpeg", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.
+////
+//        var regex = /^data:.+\/(.+);base64,(.*)$/;
+//        var matches;
+//        matches = image1.match(regex);
+//        var data1 = matches[2];
+//
+//        var info = {
+//            'image1': {
+//                'imageData': data1,
+//                'frameNumber': g_frame
+//            }
+//        };
+//
+//        $.ajax({
+//            url: 'http://127.0.0.1/runTestWithJsonData',
+//            type: 'POST',
+//            data: JSON.stringify(info),
+//            contentType: 'application/json; charset=utf-8',
+//            dataType: 'json',
+//            async: true,
+//            success: function (msg) {
+//                console.log(msg);
+//            },
+//            error: function (msg) {
+//                console.log(msg);
+//            }
+//        });
     }
 
     function addToX(transformedShape2, number) {
@@ -660,9 +681,40 @@
         keypoints2 = applyTransformationMatrixToAllKeypointsObjects(keypoints2, trans);
         var imageOutline = g_globalState.referenceCanvasState.layers[0].nonTransformedImageOutline;
         imageOutline = applyTransformationToImageOutline(imageOutline, trans);
-        keypoints2 = filterKeypointsOutsidePolygon(keypoints2, imageOutline);
-        keypoints2 = filterKeypointsOutsidePolygon(keypoints2, buildRect(280, 280));
-        drawKeypoints(ctx, keypoints2);
+//        keypoints2 = filterKeypointsOutsidePolygon(keypoints2, imageOutline);
+//        keypoints2 = filterKeypointsOutsidePolygon(keypoints2, buildRect(280, 280));
+//        drawKeypoints(ctx, keypoints2);
+
+
+        var image1 = canvas.toDataURL('image/jpeg', 0.92).replace("image/jpeg", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.
+//
+        var regex = /^data:.+\/(.+);base64,(.*)$/;
+        var matches;
+        matches = image1.match(regex);
+        var data1 = matches[2];
+
+        var info = {
+            'image1': {
+                'imageData': data1,
+                'frameNumber': g_frame
+            }
+        };
+
+        $.ajax({
+            url: 'http://127.0.0.1/runTestWithJsonData',
+            type: 'POST',
+            data: JSON.stringify(info),
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            async: true,
+            success: function (msg) {
+                console.log(msg);
+            },
+            error: function (msg) {
+                console.log(msg);
+            }
+        });
+
     }
 
     var currentAnimation = 0;
