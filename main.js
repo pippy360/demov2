@@ -528,7 +528,11 @@ function convertKeypointsToMatrixKeypoints(keypoints) {
     return ret;
 }
 
-function convertTransformationObjectToTransformationMatrix(transformations) {
+function convertTransformationObjectToTransformationMatrix(transformations, shapeCenter) {
+    if (!shapeCenter) {
+        shapeCenter = transformations.transformationCenterPoint;
+    }
+
     var transformationCenterPoint = transformations.transformationCenterPoint;
     var ret = getIdentityMatrix();
 
@@ -537,8 +541,6 @@ function convertTransformationObjectToTransformationMatrix(transformations) {
 
     ret = matrixMultiply(ret, getTranslateMatrix(transformationCenterPoint.x, transformationCenterPoint.y));
 
-    ret = matrixMultiply(ret, getScaleMatrix(transformations.uniformScale, transformations.uniformScale));
-
     //Rotate
     ret = matrixMultiply(ret, getRotatoinMatrix(-transformations.rotation));
 
@@ -546,6 +548,10 @@ function convertTransformationObjectToTransformationMatrix(transformations) {
     ret = matrixMultiply(ret, transformations.directionalScaleMatrix);
 
     ret = matrixMultiply(ret, getTranslateMatrix(-transformationCenterPoint.x, -transformationCenterPoint.y));
+
+    ret = matrixMultiply(ret, getTranslateMatrix(shapeCenter.x, shapeCenter.y));
+    ret = matrixMultiply(ret, getScaleMatrix(transformations.uniformScale, transformations.uniformScale));
+    ret = matrixMultiply(ret, getTranslateMatrix(-shapeCenter.x, -shapeCenter.y));
 
     return ret;
 }
@@ -1728,6 +1734,17 @@ function handleMouseMoveCrop(mousePosition, activeLayer) {
     activeLayer.nonTransformedImageOutline.push(transformedPoint);
 }
 
+function getCenterPointOfPoly(arr) {
+    var minX, maxX, minY, maxY;
+    for(var i=0; i< arr.length; i++){
+        minX = (arr[i].x < minX || minX == null) ? arr[i].x : minX;
+        maxX = (arr[i].x > maxX || maxX == null) ? arr[i].x : maxX;
+        minY = (arr[i].y < minY || minY == null) ? arr[i].y : minY;
+        maxY = (arr[i].y > maxY || maxY == null) ? arr[i].y : maxY;
+    }
+    return [(minX + maxX) /2, (minY + maxY) /2];
+}
+
 function handleMouseMoveOnDocument(e) {
     var pageMousePosition = getCurrentPageMousePosition(e);
     var globalState = g_globalState;
@@ -1752,10 +1769,16 @@ function handleMouseMoveOnDocument(e) {
             break;
     }
 
-    var layer = getActiveLayer(globalState);
-    var temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations);
-    savedLayerMat = globalState.transformationMatBeforeTemporaryTransformations;
-    layer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, savedLayerMat);
+    const activeLayer = getActiveLayer(globalState);
+    const imageOutline = applyTransformationToImageOutline(activeLayer.nonTransformedImageOutline, activeLayer.appliedTransformations);
+    var shapeCenter = getCenterPointOfPoly(imageOutline);
+    shapeCenter = {
+        x: shapeCenter[0],
+        y: shapeCenter[1]
+    };
+    const temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations, shapeCenter);
+    const savedLayerMat = globalState.transformationMatBeforeTemporaryTransformations;
+    activeLayer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, savedLayerMat);
 }
 
 function drawLayerImageOutline(ctx, imageOutlinePolygon) {
