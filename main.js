@@ -1184,7 +1184,7 @@ function drawUiLayer(canvasContext, keypoints, triangles, layerColour) {
     drawTriangles(canvasContext, triangles, layerColour);
 }
 
-function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage) {
+function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage, skipUiLayer) {
 
     const imageCanvasContext = canvasState.imageLayerCanvasContext;
     const uiCanvasContext = canvasState.uiLayerCanvasContext;
@@ -1197,7 +1197,11 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     }
     var transformationsMat = drawingLayer.layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
-    drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
+    if (skipUiLayer) {
+
+    }else{
+        drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
+    }
 }
 
 function clearOutputListAndWipeCanvas() {
@@ -1377,7 +1381,8 @@ function drawLayers(canvasState, drawingLayers) {
         var isActiveCanvas = g_globalState.activeCanvas == canvasState;
         var isActiveLayer = canvasState.activeLayer == drawingLayer.layer;
         var dontCropImage = isActiveLayer && isCroppingEffectActive && isActiveCanvas;
-        drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage);
+        var skipUiLayer = isCroppingEffectActive && isActiveCanvas && !isActiveLayer;
+        drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage, skipUiLayer);
     }
 
     if (isCroppingEffectActive) {
