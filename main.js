@@ -1829,7 +1829,8 @@ function handleMouseDownOnCanvas(e) {
     //FIXME: set the active canvas
 
     const currentActiveLayer = g_globalState.activeCanvas.activeLayer;
-    const clickedActiveLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, currentActiveLayer);
+    // const clickedActiveLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, currentActiveLayer);
+    const clickedActiveLayer = g_globalState.activeCanvas.activeLayer = g_globalState.activeCanvas.layers[0];
     g_globalState.activeCanvas.activeLayer = clickedActiveLayer;
 
     g_globalState.transformationMatBeforeTemporaryTransformations = clickedActiveLayer.appliedTransformations;
@@ -1950,7 +1951,7 @@ function buildGlobalState() {
     const referenceCanvasState = buildReferenceCanvasState();
     const interactiveCanvasState = buildInteractiveCanvasState();
 
-    //FIXME: come up with a better way of handling associatedLayers 
+    //FIXME: come up with a better way of handling associatedLayers
     referenceCanvasState.layers[0].associatedLayer = interactiveCanvasState.layers[0];
     interactiveCanvasState.layers[0].associatedLayer = referenceCanvasState.layers[0];
 
