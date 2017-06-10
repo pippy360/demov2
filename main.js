@@ -1021,10 +1021,12 @@ function containsMatchingTriangle(addedReferenceTriangles, refTri) {
 
 function getTableEntry(key, layerIndex, area) {
     //FIXME: i don't like these hardcoded strings
-    var outputStrClass = "triangleTRAll " + "triangleTR" + layerIndex + "_" + key.value;
+    const triangleIndex = key.value;
+    const outputStrClass = "triangleTRAll " + "triangleTR" + layerIndex + "_" + triangleIndex;
     var outputStr =
-        "<tr class=\"" + outputStrClass + "\" onmouseover=\"highlightTriangle(" + layerIndex + ", " + key.value + ")\">" +
-        "<td>" + key.value + "</td>" +
+        "<tr class=\"" + outputStrClass + "\" triangleIndex=\"" + triangleIndex
+        + "\" layerIndex=\""+layerIndex+"\" onmouseover=\"highlightTriangle(" + layerIndex + ", " +  triangleIndex + ")\">" +
+        "<td>" +  triangleIndex + "</td>" +
         "<td>" + Math.round(area) + " </td>" +
         "</tr>";
     return outputStr;
@@ -1204,11 +1206,19 @@ function clearOutputListAndWipeCanvas() {
     var c2 = g_globalState.referenceCanvasState.highlightedTriangleLayerCanvasContext;
     clearCanvasByContext(c1);
     clearCanvasByContext(c2);
+    $("#output").css("visibility", "hidden");
+}
+
+function highlightFirstElementOfOutputList() {
+    const firstElem = $("#triangleListBody").children('tr:first');
+    var layerIndex = firstElem.attr("layerIndex");
+    var triangleIndex = firstElem.attr("triangleIndex");
+    highlightTriangle(parseInt(layerIndex), parseInt(triangleIndex));
 }
 
 function generateOutputList(triangleMapArray) {
     var outputStr = "";
-
+    var listCount = 0;
     for (var i = 0; i < triangleMapArray.length; i++) {
         var triangleMap = triangleMapArray[i];
         var keys = triangleMap.keys();
@@ -1216,6 +1226,7 @@ function generateOutputList(triangleMapArray) {
             var tri = triangleMap.get(key.value).referenceTriangle;
             var area = getArea(tri);
             outputStr = outputStr + getTableEntry(key, i, area);
+            listCount++;
         }
     }
 
@@ -1228,6 +1239,11 @@ function generateOutputList(triangleMapArray) {
         });
 
     g_globalState.outputListState.triangleMapArray = triangleMapArray;
+
+    if (listCount > 0) {
+        highlightFirstElementOfOutputList();
+    }
+    $("#output").css("visibility", "visible");
 }
 
 
@@ -1931,7 +1947,8 @@ function buildGlobalState() {
 function initAfterImageLoad() {
     g_globalState = buildGlobalState();
     setCurrnetOperation(enum_TransformationOperation.TRANSLATE);
-    draw();
+    var triangleMapArray = draw();
+    generateOutputList(triangleMapArray);
     window.requestAnimationFrame(drawImageOutlineInternal);
 }
 
