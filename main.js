@@ -1881,10 +1881,36 @@ function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanv
 
     returnedCanvasState.layers = [];
     //FIXME: reference image layers done have keypoints, they are computed from the associated interactive image layer
-    var keypoints = generateRandomKeypoints({
-        width: preloadedImage.width,
-        height: preloadedImage.height
-    }, g_numberOfKeypoints)
+    var keypoints = [{ x: 60, y: 181},
+        { x: 87, y: 91},
+        { x: 44, y: 180},
+        { x: 203, y: 22},
+        { x: 197, y: 223},
+        { x: 217, y: 233},
+        { x: 138, y: 82},
+        { x: 89, y: 16},
+        { x: 247, y: 184},
+        { x: 104, y: 276},
+        { x: 158, y: 265},
+        { x: 163, y: 35},
+        { x: 220, y: 90},
+        { x: 256, y: 187},
+        { x: 102, y: 24},
+        { x: 124, y: 28},
+        { x: 205, y: 68},
+        { x: 97, y: 175},
+        { x: 149, y: 156},
+        { x: 252, y: 278},
+        { x: 199, y: 221},
+        { x: 51, y: 246},
+        { x: 11, y: 84},
+        { x: 138, y: 135},
+        { x: 225, y: 57},
+        { x: 271, y: 106},
+        { x: 55, y: 278},
+        { x: 209, y: 112},
+        { x: 243, y: 186},
+        { x: 110, y: 54}];
     returnedCanvasState.layers.push(newLayer(preloadedImage, keypoints, BLUE_COLOUR));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
     return returnedCanvasState;
