@@ -528,7 +528,11 @@ function convertKeypointsToMatrixKeypoints(keypoints) {
     return ret;
 }
 
-function convertTransformationObjectToTransformationMatrix(transformations) {
+function convertTransformationObjectToTransformationMatrix(transformations, shapeCenter) {
+    if (!shapeCenter) {
+        shapeCenter = transformations.transformationCenterPoint;
+    }
+
     var transformationCenterPoint = transformations.transformationCenterPoint;
     var ret = getIdentityMatrix();
 
@@ -537,8 +541,6 @@ function convertTransformationObjectToTransformationMatrix(transformations) {
 
     ret = matrixMultiply(ret, getTranslateMatrix(transformationCenterPoint.x, transformationCenterPoint.y));
 
-    ret = matrixMultiply(ret, getScaleMatrix(transformations.uniformScale, transformations.uniformScale));
-
     //Rotate
     ret = matrixMultiply(ret, getRotatoinMatrix(-transformations.rotation));
 
@@ -546,6 +548,10 @@ function convertTransformationObjectToTransformationMatrix(transformations) {
     ret = matrixMultiply(ret, transformations.directionalScaleMatrix);
 
     ret = matrixMultiply(ret, getTranslateMatrix(-transformationCenterPoint.x, -transformationCenterPoint.y));
+
+    ret = matrixMultiply(ret, getTranslateMatrix(shapeCenter.x, shapeCenter.y));
+    ret = matrixMultiply(ret, getScaleMatrix(transformations.uniformScale, transformations.uniformScale));
+    ret = matrixMultiply(ret, getTranslateMatrix(-shapeCenter.x, -shapeCenter.y));
 
     return ret;
 }
@@ -1184,7 +1190,7 @@ function drawUiLayer(canvasContext, keypoints, triangles, layerColour) {
     drawTriangles(canvasContext, triangles, layerColour);
 }
 
-function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage) {
+function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage, skipUiLayer) {
 
     const imageCanvasContext = canvasState.imageLayerCanvasContext;
     const uiCanvasContext = canvasState.uiLayerCanvasContext;
@@ -1197,7 +1203,11 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     }
     var transformationsMat = drawingLayer.layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
-    drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
+    if (skipUiLayer) {
+
+    }else{
+        drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
+    }
 }
 
 function clearOutputListAndWipeCanvas() {
@@ -1377,7 +1387,8 @@ function drawLayers(canvasState, drawingLayers) {
         var isActiveCanvas = g_globalState.activeCanvas == canvasState;
         var isActiveLayer = canvasState.activeLayer == drawingLayer.layer;
         var dontCropImage = isActiveLayer && isCroppingEffectActive && isActiveCanvas;
-        drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage);
+        var skipUiLayer = isCroppingEffectActive && isActiveCanvas && !isActiveLayer;
+        drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage, skipUiLayer);
     }
 
     if (isCroppingEffectActive) {
@@ -1723,6 +1734,17 @@ function handleMouseMoveCrop(mousePosition, activeLayer) {
     activeLayer.nonTransformedImageOutline.push(transformedPoint);
 }
 
+function getCenterPointOfPoly(arr) {
+    var minX, maxX, minY, maxY;
+    for(var i=0; i< arr.length; i++){
+        minX = (arr[i].x < minX || minX == null) ? arr[i].x : minX;
+        maxX = (arr[i].x > maxX || maxX == null) ? arr[i].x : maxX;
+        minY = (arr[i].y < minY || minY == null) ? arr[i].y : minY;
+        maxY = (arr[i].y > maxY || maxY == null) ? arr[i].y : maxY;
+    }
+    return [(minX + maxX) /2, (minY + maxY) /2];
+}
+
 function handleMouseMoveOnDocument(e) {
     var pageMousePosition = getCurrentPageMousePosition(e);
     var globalState = g_globalState;
@@ -1747,10 +1769,16 @@ function handleMouseMoveOnDocument(e) {
             break;
     }
 
-    var layer = getActiveLayer(globalState);
-    var temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations);
-    savedLayerMat = globalState.transformationMatBeforeTemporaryTransformations;
-    layer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, savedLayerMat);
+    const activeLayer = getActiveLayer(globalState);
+    const imageOutline = applyTransformationToImageOutline(activeLayer.nonTransformedImageOutline, activeLayer.appliedTransformations);
+    var shapeCenter = getCenterPointOfPoly(imageOutline);
+    shapeCenter = {
+        x: shapeCenter[0],
+        y: shapeCenter[1]
+    };
+    const temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations, shapeCenter);
+    const savedLayerMat = globalState.transformationMatBeforeTemporaryTransformations;
+    activeLayer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, savedLayerMat);
 }
 
 function drawLayerImageOutline(ctx, imageOutlinePolygon) {
@@ -1829,7 +1857,8 @@ function handleMouseDownOnCanvas(e) {
     //FIXME: set the active canvas
 
     const currentActiveLayer = g_globalState.activeCanvas.activeLayer;
-    const clickedActiveLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, currentActiveLayer);
+    // const clickedActiveLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, currentActiveLayer);
+    const clickedActiveLayer = g_globalState.activeCanvas.activeLayer = g_globalState.activeCanvas.layers[0];
     g_globalState.activeCanvas.activeLayer = clickedActiveLayer;
 
     g_globalState.transformationMatBeforeTemporaryTransformations = clickedActiveLayer.appliedTransformations;
@@ -1897,10 +1926,36 @@ function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanv
 
     returnedCanvasState.layers = [];
     //FIXME: reference image layers done have keypoints, they are computed from the associated interactive image layer
-    var keypoints = generateRandomKeypoints({
-        width: preloadedImage.width,
-        height: preloadedImage.height
-    }, g_numberOfKeypoints)
+    var keypoints = [{ x: 60, y: 181},
+        { x: 87, y: 91},
+        { x: 44, y: 180},
+        { x: 203, y: 22},
+        { x: 197, y: 223},
+        { x: 217, y: 233},
+        { x: 138, y: 82},
+        { x: 89, y: 16},
+        { x: 247, y: 184},
+        { x: 104, y: 276},
+        { x: 158, y: 265},
+        { x: 163, y: 35},
+        { x: 220, y: 90},
+        { x: 256, y: 187},
+        { x: 102, y: 24},
+        { x: 124, y: 28},
+        { x: 205, y: 68},
+        { x: 97, y: 175},
+        { x: 149, y: 156},
+        { x: 252, y: 278},
+        { x: 199, y: 221},
+        { x: 51, y: 246},
+        { x: 11, y: 84},
+        { x: 138, y: 135},
+        { x: 225, y: 57},
+        { x: 271, y: 106},
+        { x: 55, y: 278},
+        { x: 209, y: 112},
+        { x: 243, y: 186},
+        { x: 110, y: 54}];
     returnedCanvasState.layers.push(newLayer(preloadedImage, keypoints, BLUE_COLOUR));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
     return returnedCanvasState;
@@ -1924,7 +1979,7 @@ function buildGlobalState() {
     const referenceCanvasState = buildReferenceCanvasState();
     const interactiveCanvasState = buildInteractiveCanvasState();
 
-    //FIXME: come up with a better way of handling associatedLayers 
+    //FIXME: come up with a better way of handling associatedLayers
     referenceCanvasState.layers[0].associatedLayer = interactiveCanvasState.layers[0];
     interactiveCanvasState.layers[0].associatedLayer = referenceCanvasState.layers[0];
 
