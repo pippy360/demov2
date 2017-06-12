@@ -116,7 +116,8 @@ function newGlobalState() {
         isMouseDownAndClickedOnCanvas: null,
         temporaryAppliedTransformations: null,
         transformationMatBeforeTemporaryTransformations: null,
-        pageMouseDownPosition: null
+        pageMouseDownPosition: null,
+        highlightedTriangleListIndex: null
     };
 }
 
@@ -1219,11 +1220,15 @@ function clearOutputListAndWipeCanvas() {
     $("#output").css("visibility", "hidden");
 }
 
-function highlightFirstElementOfOutputList() {
-    const firstElem = $("#triangleListBody").children('tr:first');
+function highlightTriangleByListIndex(index) {
+    const firstElem = $('#triangleListBody tr').eq(index);
     var layerIndex = firstElem.attr("layerIndex");
     var triangleIndex = firstElem.attr("triangleIndex");
     highlightTriangle(parseInt(layerIndex), parseInt(triangleIndex));
+}
+
+function highlightFirstElementOfOutputList() {
+    highlightTriangleByListIndex(0);
 }
 
 function generateOutputList(triangleMapArray) {
@@ -1732,6 +1737,16 @@ function handleMouseMoveCrop(mousePosition, activeLayer) {
     var transformedPointMat = applyTransformationMatToSingleKeypoint(keypointMat, invMat);
     var transformedPoint = convertSingleMatrixKeypoinToKeypointObject(transformedPointMat);
     activeLayer.nonTransformedImageOutline.push(transformedPoint);
+}
+
+function highlightPrevTriangle() {
+    g_globalState.highlightedTriangleListIndex--;
+    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
+}
+
+function highlightNextTriangle() {
+    g_globalState.highlightedTriangleListIndex++;
+    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
 }
 
 function getCenterPointOfPoly(arr) {
