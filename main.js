@@ -137,11 +137,6 @@ var enum_TransformationOperation = {
 // getters
 //
 
-function toggleDrawUIOverlayMode() {
-    g_shouldDrawUIOverlay = !g_shouldDrawUIOverlay;
-    draw();
-}
-
 
 function applyTransformationToImageOutline(imageOutline, appliedTransformations) {
     return applyTransformationMatrixToAllKeypointsObjects(imageOutline, appliedTransformations);
@@ -780,12 +775,16 @@ function highlightTriangle(layerIndex, triangleIndex) {
     //draw the outline of the triangle on the original canvas
     var enableFill = true;
     clearCanvasByContext(interactiveHighlightedCanvasContext);
-    drawTriangleWithColour(interactiveHighlightedCanvasContext, triangleStruct.interactiveTriangle,
-        [255, 255, 255], [24, 61, 78], enableFill);
     clearCanvasByContext(referenceHighlightedCanvasContext);
-    drawTriangleWithColour(referenceHighlightedCanvasContext, triangleStruct.referenceTriangle,
-        [255, 255, 255], [24, 61, 78], enableFill);
 
+    if (g_drawingOptions.drawUiOverlay) {
+        drawTriangleWithColour(interactiveHighlightedCanvasContext, triangleStruct.interactiveTriangle,
+            [255, 255, 255], [24, 61, 78], enableFill);
+        drawTriangleWithColour(referenceHighlightedCanvasContext, triangleStruct.referenceTriangle,
+            [255, 255, 255], [24, 61, 78], enableFill);
+    } else {
+        //skip
+    }
 
     //fill the fragment canvases
     var interactiveCanvas = g_globalState.interactiveCanvasState.imageLayerCanvas;
@@ -1204,7 +1203,7 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     }
     var transformationsMat = drawingLayer.layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
-    if (skipUiLayer) {
+    if (skipUiLayer || !g_drawingOptions.drawUiOverlay) {
 
     }else{
         drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
@@ -1485,6 +1484,12 @@ function changeInteractiveCanvasSize(width, height) {
     draw();
 }
 
+function toggleDrawUIOverlayWrapper(event) {
+    g_drawingOptions.drawUiOverlay = !g_drawingOptions.drawUiOverlay;
+    $("#toggleDrawUIOverlayButton").toggleClass('backgroundColourGrey');
+    draw();
+    highlightTriangleByListIndex(0);//clear the triangle//HACK
+}
 
 $(document).mousedown(function (e) {
     //ignore

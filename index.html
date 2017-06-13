@@ -287,14 +287,19 @@
             top: -28px;
             left: -28px;
         }
+
         body:after{
             display:none;
             content: url('images/fish_1.jpg') url('images/fish_2.jpg');
         }
+
         .dropdown-menu li {
             cursor: pointer;
         }
 
+        .backgroundColourGrey {
+            background-color: #eee;
+        }
     </style>
 </head>
 <body>
@@ -341,9 +346,7 @@
                                 name="options2" autocomplete="off">Settings<span
                                 class="caret"></span></button>
                     <ul class="dropdown-menu dropdown-menu-right">
-                        <li class="dropdown-item"><a href="#">HTML</a></li>
-                        <li class="dropdown-item"><a href="#">CSS</a></li>
-                        <li class="dropdown-item"><a href="#">JavaScript</a></li>
+                        <li class="dropdown-item" id="toggleDrawUIOverlayButton" onclick="toggleDrawUIOverlayWrapper()"><a href="#">Toggle draw UI overlay</a></li>
                     </ul>
                    </div>
                 </span>
