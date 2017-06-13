@@ -31,6 +31,15 @@
             float: left;
         }
 
+        .prevBtn {
+            margin-left: 35px;
+        }
+  
+        .nextBtn {
+            float: right;
+            margin-right: 35px;
+        }
+        
         .move {
             cursor: move;
         }
@@ -374,8 +383,8 @@
                         <div class="distanceOutput">
                             <label class="distanceOutputTitle">Perceptual hash distance:</label>
                             <label id="pHashDistanceOutputWrapper" class="distanceOutputData"> 0 </label>
-                            <button class="btn btn-secondary" onclick="highlightPrevTriangle()">prev</button>
-                            <button class="btn btn-secondary" onclick="highlightNextTriangle()">next</button>
+                            <button class="prevBtn btn btn-secondary" onclick="highlightPrevTriangle()">prev</button>
+                            <button class="nextBtn btn btn-secondary" onclick="highlightNextTriangle()">next</button>
                         </div>
                         <div class="fragmentCanvasWrapper">
                             <canvas class="canvasShadow" id="fragmentCanvas2" height="160" width="160"></canvas>
