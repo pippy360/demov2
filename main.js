@@ -1748,6 +1748,9 @@ function handleMouseMoveCrop(mousePosition, activeLayer) {
 
 function highlightPrevTriangle() {
     var newIndex = g_globalState.highlightedTriangleListIndex - 1;
+    if (newIndex < 0) {
+        newIndex = 0;
+    }
     var pos = $('#triangleListBody tr:nth-child('+newIndex+')').position().top - $("#triangleListBody").position().top;
     $(".trianglesListInnerWrapper").scrollTop(pos);
     highlightTriangleByListIndex(newIndex);
@@ -1755,6 +1758,10 @@ function highlightPrevTriangle() {
 
 function highlightNextTriangle() {
     var newIndex = g_globalState.highlightedTriangleListIndex + 1;
+    var len = $('#triangleListBody tr').length;
+    if (newIndex >= len){
+        newIndex = len - 1;
+    }
     var pos = $('#triangleListBody tr:nth-child('+newIndex+')').position().top - $("#triangleListBody").position().top;
     $(".trianglesListInnerWrapper").scrollTop(pos);
     highlightTriangleByListIndex(newIndex);
