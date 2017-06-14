@@ -1025,13 +1025,13 @@ function containsMatchingTriangle(addedReferenceTriangles, refTri) {
     return false;
 }
 
-function getTableEntry(key, layerIndex, area) {
+function getTableEntry(key, layerIndex, area, listIndex) {
     //FIXME: i don't like these hardcoded strings
     const triangleIndex = key.value;
     const outputStrClass = "triangleTRAll " + "triangleTR" + layerIndex + "_" + triangleIndex;
     var outputStr =
         "<tr class=\"" + outputStrClass + "\" triangleIndex=\"" + triangleIndex
-        + "\" layerIndex=\""+layerIndex+"\" onmouseover=\"highlightTriangle(" + layerIndex + ", " +  triangleIndex + ")\">" +
+        + "\" layerIndex=\""+layerIndex+"\" onmouseover=\"highlightTriangleByListIndex(" + listIndex + ")\">" +
         "<td>" +  triangleIndex + "</td>" +
         "<td>" + Math.round(area) + " </td>" +
         "</tr>";
@@ -1239,7 +1239,7 @@ function generateOutputList(triangleMapArray) {
         for (var key = keys.next(); !key.done; key = keys.next()) { //iterate over keys
             var tri = triangleMap.get(key.value).referenceTriangle;
             var area = getArea(tri);
-            outputStr = outputStr + getTableEntry(key, i, area);
+            outputStr = outputStr + getTableEntry(key, i, area, listCount);
             listCount++;
         }
     }
