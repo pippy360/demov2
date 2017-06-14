@@ -1748,13 +1748,15 @@ function handleMouseMoveCrop(mousePosition, activeLayer) {
 
 function highlightPrevTriangle() {
     var newIndex = g_globalState.highlightedTriangleListIndex - 1;
-    $(".trianglesListInnerWrapper").scrollTop($('#triangleListBody tr:nth-child('+newIndex+')').position().top);
+    var pos = $('#triangleListBody tr:nth-child('+newIndex+')').position().top - $("#triangleListBody").position().top;
+    $(".trianglesListInnerWrapper").scrollTop(pos);
     highlightTriangleByListIndex(newIndex);
 }
 
 function highlightNextTriangle() {
     var newIndex = g_globalState.highlightedTriangleListIndex + 1;
-    $(".trianglesListInnerWrapper").scrollTop($('#triangleListBody tr:nth-child('+newIndex+')').position().top);
+    var pos = $('#triangleListBody tr:nth-child('+newIndex+')').position().top - $("#triangleListBody").position().top;
+    $(".trianglesListInnerWrapper").scrollTop(pos);
     highlightTriangleByListIndex(newIndex);
 }
 
