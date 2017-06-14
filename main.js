@@ -1751,7 +1751,7 @@ function highlightPrevTriangle() {
     if (newIndex < 0) {
         newIndex = 0;
     }
-    var pos = $('#triangleListBody tr:nth-child('+newIndex+')').position().top - $("#triangleListBody").position().top;
+    var pos = $('#triangleListBody tr:nth-child('+(newIndex+1)+')').position().top - $("#triangleListBody").position().top;
     $(".trianglesListInnerWrapper").scrollTop(pos);
     highlightTriangleByListIndex(newIndex);
 }
@@ -1762,7 +1762,7 @@ function highlightNextTriangle() {
     if (newIndex >= len){
         newIndex = len - 1;
     }
-    var pos = $('#triangleListBody tr:nth-child('+newIndex+')').position().top - $("#triangleListBody").position().top;
+    var pos = $('#triangleListBody tr:nth-child('+(newIndex+1)+')').position().top - $("#triangleListBody").position().top;
     $(".trianglesListInnerWrapper").scrollTop(pos);
     highlightTriangleByListIndex(newIndex);
 }
