@@ -1747,11 +1747,15 @@ function handleMouseMoveCrop(mousePosition, activeLayer) {
 }
 
 function highlightPrevTriangle() {
-    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex - 1);
+    var newIndex = g_globalState.highlightedTriangleListIndex - 1;
+    $(".trianglesListInnerWrapper").scrollTop($('.triangleListBody tr:nth-child(newIndex)').position().top);
+    highlightTriangleByListIndex(newIndex);
 }
 
 function highlightNextTriangle() {
-    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex + 1);
+    var newIndex = g_globalState.highlightedTriangleListIndex + 1;
+    $(".trianglesListInnerWrapper").scrollTop($('.triangleListBody tr:nth-child(newIndex)').position().top);
+    highlightTriangleByListIndex(newIndex);
 }
 
 function getCenterPointOfPoly(arr) {
