@@ -1220,6 +1220,8 @@ function clearOutputListAndWipeCanvas() {
 }
 
 function highlightTriangleByListIndex(index) {
+    g_globalState.highlightedTriangleListIndex = index;
+    
     const firstElem = $('#triangleListBody tr').eq(index);
     var layerIndex = firstElem.attr("layerIndex");
     var triangleIndex = firstElem.attr("triangleIndex");
@@ -1745,13 +1747,11 @@ function handleMouseMoveCrop(mousePosition, activeLayer) {
 }
 
 function highlightPrevTriangle() {
-    g_globalState.highlightedTriangleListIndex--;
-    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
+    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex - 1);
 }
 
 function highlightNextTriangle() {
-    g_globalState.highlightedTriangleListIndex++;
-    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
+    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex + 1);
 }
 
 function getCenterPointOfPoly(arr) {
