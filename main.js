@@ -124,9 +124,9 @@ function newGlobalState() {
 }
 
 function reset() {
+    let saved = g_globalState.currentTranformationOperationState;
     init();
-    $(".buttonsInner label").removeClass('active');
-    $("#translateButton").addClass("active");
+    setCurrnetOperation(saved);
 }
 
 var enum_TransformationOperation = {
