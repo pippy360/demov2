@@ -125,6 +125,7 @@ function newGlobalState() {
 
 function reset() {
     init();
+    $("#translateButton").addClass("active");
 }
 
 var enum_TransformationOperation = {
