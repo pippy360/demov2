@@ -13,7 +13,9 @@ var g_drawingOptions = {
     drawKeypoints: false,
     drawTriangles: true,
     forceApplyTransformations: false,
-    drawImageOutline: true
+    drawImageOutline: true,
+    drawInteractiveCanvasUiLayer: true,
+    drawReferenceCanvasUiLayer: true,
 };
 
 //
@@ -1203,6 +1205,7 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     }
     var transformationsMat = drawingLayer.layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
+    
     if (skipUiLayer || !g_drawingOptions.drawUiOverlay) {
 
     }else{
@@ -1394,6 +1397,17 @@ function drawLayers(canvasState, drawingLayers) {
         var isActiveLayer = canvasState.activeLayer == drawingLayer.layer;
         var dontCropImage = isActiveLayer && isCroppingEffectActive && isActiveCanvas;
         var skipUiLayer = isCroppingEffectActive && isActiveCanvas && !isActiveLayer;
+        if (!g_drawingOptions.drawInteractiveCanvasUiLayer) {
+            if (canvasState === g_globalState.interactiveCanvasState) {
+                skipUiLayer = true;
+            }
+        }
+
+        if (!g_drawingOptions.drawReferenceCanvasUiLayer) {
+            if (canvasState === g_globalState.referenceCanvasState) {
+                skipUiLayer = true;
+            }
+        }        
         drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage, skipUiLayer);
     }
 
