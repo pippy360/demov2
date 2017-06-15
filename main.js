@@ -1509,7 +1509,7 @@ function toggleDrawUIOverlayWrapper(event) {
 }
 
 function toggleDrawReferenceUIOverlayWrapper(event) {
-    g_drawingOptions.drawReferenceCanvasUiLayer = !g_drawingOptions.drawInteractiveCanvasUiLayer;
+    g_drawingOptions.drawReferenceCanvasUiLayer = !g_drawingOptions.drawReferenceCanvasUiLayer;
     $("#toggleDrawReferenceUIOverlayButton").toggleClass('backgroundColourGrey');
     draw();
     highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
