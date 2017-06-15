@@ -125,6 +125,7 @@ function newGlobalState() {
 
 function reset() {
     init();
+    $(".buttonsInner label").removeClass('active');
     $("#translateButton").addClass("active");
 }
 
