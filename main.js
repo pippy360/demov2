@@ -1504,7 +1504,22 @@ function toggleDrawUIOverlayWrapper(event) {
     g_drawingOptions.drawUiOverlay = !g_drawingOptions.drawUiOverlay;
     $("#toggleDrawUIOverlayButton").toggleClass('backgroundColourGrey');
     draw();
-    highlightTriangleByListIndex(0);//clear the triangle//HACK
+    
+    (0);//clear the triangle//HACK
+}
+
+function toggleDrawReferenceUIOverlayWrapper(event) {
+    g_drawingOptions.drawUiOverlay = !g_drawingOptions.drawUiOverlay;
+    $("#toggleDrawReferenceUIOverlayButton").toggleClass('backgroundColourGrey');
+    draw();
+    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
+}
+
+function toggleDrawInteractiveUIOverlayWrapper(event) {
+    g_drawingOptions.drawUiOverlay = !g_drawingOptions.drawUiOverlay;
+    $("#toggleDrawInteractiveUIOverlayButton").toggleClass('backgroundColourGrey');
+    draw();
+    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
 }
 
 $(document).mousedown(function (e) {
