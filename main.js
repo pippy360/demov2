@@ -1509,14 +1509,14 @@ function toggleDrawUIOverlayWrapper(event) {
 }
 
 function toggleDrawReferenceUIOverlayWrapper(event) {
-    g_drawingOptions.drawUiOverlay = !g_drawingOptions.drawUiOverlay;
+    g_drawingOptions.drawReferenceCanvasUiLayer = !g_drawingOptions.drawInteractiveCanvasUiLayer;
     $("#toggleDrawReferenceUIOverlayButton").toggleClass('backgroundColourGrey');
     draw();
     highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
 }
 
 function toggleDrawInteractiveUIOverlayWrapper(event) {
-    g_drawingOptions.drawUiOverlay = !g_drawingOptions.drawUiOverlay;
+    g_drawingOptions.drawInteractiveCanvasUiLayer = !g_drawingOptions.drawInteractiveCanvasUiLayer;
     $("#toggleDrawInteractiveUIOverlayButton").toggleClass('backgroundColourGrey');
     draw();
     highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
