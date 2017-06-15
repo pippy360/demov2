@@ -778,12 +778,16 @@ function highlightTriangle(layerIndex, triangleIndex) {
     var enableFill = true;
     clearCanvasByContext(interactiveHighlightedCanvasContext);
     clearCanvasByContext(referenceHighlightedCanvasContext);
-
+    
     if (g_drawingOptions.drawUiOverlay) {
-        drawTriangleWithColour(interactiveHighlightedCanvasContext, triangleStruct.interactiveTriangle,
-            [255, 255, 255], [24, 61, 78], enableFill);
-        drawTriangleWithColour(referenceHighlightedCanvasContext, triangleStruct.referenceTriangle,
-            [255, 255, 255], [24, 61, 78], enableFill);
+        if (g_drawingOptions.drawInteractiveCanvasUiLayer) {    
+            drawTriangleWithColour(interactiveHighlightedCanvasContext, triangleStruct.interactiveTriangle,
+                [255, 255, 255], [24, 61, 78], enableFill);
+        }
+        if (g_drawingOptions.drawReferenceCanvasUiLayer) {
+            drawTriangleWithColour(referenceHighlightedCanvasContext, triangleStruct.referenceTriangle,
+                [255, 255, 255], [24, 61, 78], enableFill);
+        }
     } else {
         //skip
     }
