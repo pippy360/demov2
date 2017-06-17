@@ -125,7 +125,8 @@ function newGlobalState() {
 
 function reset() {
     let saved = g_globalState.currentTranformationOperationState;
-    init();
+    initAfterImageLoad();
+    _debug_addlayer('images/background_resize.jpg');
     setCurrnetOperation(saved);
 }
 
