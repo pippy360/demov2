@@ -22,11 +22,24 @@
             display: block;
         }
 
+        .btn {
+            cursor: pointer;
+        }
+
         .bigCanvasContainer {
             /*width: 580px;*/
             float: left;
         }
 
+        .prevBtn {
+            margin-left: 35px;
+        }
+  
+        .nextBtn {
+            float: right;
+            margin-right: 35px;
+        }
+        
         .move {
             cursor: move;
         }
@@ -145,7 +158,7 @@
         .aboutArea {
             font-family: "Roboto", "Helvetica", "Arial", sans-serif;
             color: rgba(0,0,0,0.7);
-            width: 550px;
+            width: 700px;
             padding: 80px 0px;
             margin: auto;
         }
@@ -240,11 +253,13 @@
         .interactiveCanvasWrapper {
             width: 280px;
             height: 280px;
+            cursor: pointer;
         }
 
         .referenceCanvasWrapper {
             width: 280px;
             height: 280px;
+            cursor: pointer;
         }
 
         .canvasShadow {
@@ -272,9 +287,18 @@
             top: -28px;
             left: -28px;
         }
+
         body:after{
             display:none;
             content: url('images/fish_1.jpg') url('images/fish_2.jpg');
+        }
+
+        .dropdown-menu li {
+            cursor: pointer;
+        }
+
+        .backgroundColourGrey {
+            background-color: #eee;
         }
     </style>
 </head>
@@ -289,7 +313,7 @@
     <div class="buttonsWrapper">
         <div class="buttonsInner">
             <span data-toggle="buttons">
-                <label class="btn btn-secondary active"
+                <label id="translateButton" class="btn btn-secondary active"
                        onclick="setCurrnetOperation(enum_TransformationOperation.TRANSLATE)">
                     <input type="radio" name="options" autocomplete="off" checked>Move</input>
                 </label>
@@ -310,12 +334,22 @@
             </span>
             <!--<button class="btn btn-default" onclick="toggleDrawKeypointsMode()" >Toggle DrawKeypoints</button>-->
             <!--<button class="btn btn-default" style="float:right;" onclick="callSearch()">CompareImages</button>-->
-            <span style="float: right" >
-                <button type="button" style="margin-bottom: 8px;" class="btn btn-secondary" onclick="reset()">Reset</button>
+            <span style="float: right">
                 <span data-toggle="buttons">
-                    <label class="btn btn-secondary" onclick="toggleDrawUIOverlayMode()">
-                        <input type="checkbox" name="options2" autocomplete="off">Hide UI Overlay</input>
-                    </label>
+                   <div style="float: left; padding-right: 10px;">
+                <button type="button" style="margin-bottom: 8px;" class="alert-danger btn btn-secondary"
+                        onclick="reset()">Reset</button>
+                   </div>
+
+                   <div class="dropdown" style="float: left">
+                        <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" type="button"
+                                name="options2" autocomplete="off">Settings<span
+                                class="caret"></span></button>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        <li class="dropdown-item" id="toggleDrawInteractiveUIOverlayButton" onclick="toggleDrawInteractiveUIOverlayWrapper()"><a href="#">Toggle draw 1st canvas UI overlay</a></li>
+                        <li class="dropdown-item" id="toggleDrawReferenceUIOverlayButton" onclick="toggleDrawReferenceUIOverlayWrapper()"><a href="#">Toggle draw 2nd canvas UI overlay</a></li>
+                    </ul>
+                   </div>
                 </span>
             </span>
         </div>
@@ -353,6 +387,8 @@
                         <div class="distanceOutput">
                             <label class="distanceOutputTitle">Perceptual hash distance:</label>
                             <label id="pHashDistanceOutputWrapper" class="distanceOutputData"> 0 </label>
+                            <button class="prevBtn btn btn-secondary" onclick="highlightPrevTriangle()">prev</button>
+                            <button class="nextBtn btn btn-secondary" onclick="highlightNextTriangle()">next</button>
                         </div>
                         <div class="fragmentCanvasWrapper">
                             <canvas class="canvasShadow" id="fragmentCanvas2" height="160" width="160"></canvas>
@@ -365,7 +401,7 @@
                 <p class="alert-info distanceOutputHelpMessage">Hover over a result in the
                     list below to see the matched image fragments. </p>
                 <h5 class="resultsTitle">Results</h5>
-                <div class="trianglesListInnerWrapper">
+                <div class="trianglesListInnerWrapper" id="trianglesListInnerWrapper">
                     <table class="triangleList table ">
                         <thead>
                         <tr>
@@ -390,19 +426,28 @@
         <div class="aboutArea">
             <h2>About</h2>
             <p>
-                It’s a technique for building a computer program that learns from data.
-                It is based very loosely on how we think the human brain works.
-                First, a collection of software “neurons” are created and connected together,
-                allowing them to send messages to each other.
-                Next, the network is asked to solve a problem, which it attempts to do over and over,
-                each time strengthening the connections that lead to success and diminishing those that lead to failure.
-                For a more detailed introduction to neural networks, Michael Nielsen’s Neural Networks and Deep Learning
-                is a good place to start. For a more technical overview, try Deep Learning by Ian Goodfellow, Yoshua Bengio,
-                and Aaron Courville.
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
             </p>
-            <div class="fishImage">
-            </div>
-            <img src="images/volley_ball.jpg"/>
+            <br>
+            <video  src="images/out4.mp4" controls autoplay loop></video>
+            <br>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            </p>
+            <br>
+            <video  src="images/out3.mp4" controls autoplay loop></video>
+            <br>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            </p>
+            <br>
+            <video  src="images/out.mp4" controls autoplay loop></video>
+            <br>
+            <br>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            </p>
+
         </div>
     </div>
 </div>
@@ -420,6 +465,14 @@
 <script src="main.js"></script>
 
 <script>
+
+$(".moreButton").click(function() {		
+	$('html, body').animate({		
+		scrollTop: $(".moreButton").offset().top		
+	}, 500);		
+});
+
+    
 </script>
 </body>
 <script>

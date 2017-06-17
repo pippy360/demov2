@@ -21,7 +21,7 @@ var g_drawingOptions = {
 // consts
 //
 
-const MAX_TRIANGLES_DRAW = 200;//max number of triangles to draw per layer
+const MAX_TRIANGLES_DRAW = 800;//max number of triangles to draw per layer
 //FIXME: fix hardcoded values
 const TARGET_TRIANGLE_SCALE = {
     x: 160,
@@ -40,7 +40,7 @@ const REFERENCE_CANVAS_IMAGE_OUTLINE_ID = "databaseImageCanvasImageOutline";
 const REFERENCE_FRAGMENT_CANVAS_ID = "fragmentCanvas2";
 const REFERENCE_HIGHLIGHTED_CANVAS_ID = "databaseImageCanvasHighlightedTriangle";
 
-var g_numberOfKeypoints = 40;
+var g_numberOfKeypoints = 52;
 const MIN_CROPPING_POLYGON_AREA = 600;
 
 const ORANGE_COLOUR = [255, 87, 34];
@@ -853,7 +853,7 @@ function drawLineFromPointToMousePosition(ctx) {
 function drawTriangleWithColour(ctx, tri, strokeColour, fillColour, enableFill) {
     var alpha = 0.8;
     if(setAlpha)
-        alpha = .1;
+        alpha = .05;
 
     ctx.strokeStyle = 'rgba(' + strokeColour[0] + ', ' + strokeColour[1] + ' ,' + strokeColour[2] + ', ' + alpha + ')';
     //ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
@@ -1397,6 +1397,9 @@ function buildInteractiveCanvasDrawingLayers(canvasDimensions, layers) {
             var currentStep = g_steps[j];
             var tempTriangles = computeTriangles(filteredKeypoints, currentStep.maxPntDist, currentStep.minPntDist, currentStep.minTriArea);
             computedTrianglesForAllSteps = computedTrianglesForAllSteps.concat(tempTriangles);
+            if(computedTrianglesForAllSteps.length > MAX_TRIANGLES_DRAW){
+                break;
+            }
         }
 
         var computedTrianglesForAllSteps = filteredTrianglesByImageOutlineIntersection(layersOnTop, computedTrianglesForAllSteps);

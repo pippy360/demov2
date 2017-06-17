@@ -395,7 +395,7 @@
                             <canvas class="canvasShadow" id="fragmentCanvas2" height="160" width="160"></canvas>
                         </div>
                     </div>
-
+                    <canvas id="bigCanvas" width="700" height="600"></canvas>
                 </div>
             </div>
         </div>
@@ -422,312 +422,253 @@
     var animationStartTime;
     var end = false;
     var animationStartMatrix;
-    var endx = 80;
-    var endy = 80;
-    var mult = 10;
-    function animation7() {
-        var endTime = 3000*mult;
-        g_globalState.transformationMatBeforeTemporaryTransformations = animationStartMatrix;
-        const animationSpeed = 1.2;
-        wipeTemporaryAppliedTransformations();
+    var mult = 1;
 
-        var currentTime = new Date();
-        var prog = currentTime.getTime() - animationStartTime.getTime();
-        if(prog > endTime){
-            end = false;
-            animationStartTime = new Date();
-            return;
-//            window.requestAnimationFrame(animation2);
-        }
 
-        var endRotation = 120;
+    function animation7(frame) {
+        var animationFrames = 120*mult;
 
-        prog *= animationSpeed;
-        g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
-        var value = (((2 * Math.PI) / 60) * prog)%1000;
-//        g_globalState.temporaryAppliedTransformations.translate.x = 10;
-        var frame = prog/endTime;
-
-//        g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:80+150,y:80+150};
-
+        animationStart();
+        
+        var percentageDone = frame/animationFrames;
         g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:310,y:215};
-        g_globalState.temporaryAppliedTransformations.uniformScale = (5*frame) + 1;
-//        console.log(value);
-//        g_globalState.temporaryAppliedTransformations.rotation = value;
+        g_globalState.temporaryAppliedTransformations.uniformScale = (5*percentageDone) + 1;
 
-        g_globalState.forceTempAnimations = true;
-//        g_globalState.isMouseDownAndClickedOnCanvas = true;
-        applyTemporaryTransformationsToActiveLayer();
-        wipeTemporaryAppliedTransformations();
-
-        draw();
-        window.requestAnimationFrame(animation7);
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
+    function animation6(frame) {
+        var animationFrames = 120*mult;
 
-    function animation6() {
-        var endTime = 2000*mult;
-        g_globalState.transformationMatBeforeTemporaryTransformations = animationStartMatrix;
-        const animationSpeed = 1.2;
-        wipeTemporaryAppliedTransformations();
-
-        var currentTime = new Date();
-        var prog = currentTime.getTime() - animationStartTime.getTime();
-        if(prog > endTime){
-            animationStartTime = new Date();
-            g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-            animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
-            window.requestAnimationFrame(animation7);
-            return;
-        }
-
-        var endRotation = 120;
-
-        prog *= animationSpeed;
-        g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
-        var value = (((2 * Math.PI) / 60) * prog)%1000;
-//        g_globalState.temporaryAppliedTransformations.translate.x = 10;
-        var frame = prog/endTime;
-
-//        g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:80+150,y:80+150};
-
+        animationStart();
+        
+        var percentageDone = frame/animationFrames;
         g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:310,y:215};
-        g_globalState.temporaryAppliedTransformations.uniformScale = (1/(frame*2 + 1));
-//        console.log(value);
-//        g_globalState.temporaryAppliedTransformations.rotation = value;
+        g_globalState.temporaryAppliedTransformations.uniformScale = (1/(percentageDone*2 + 1));
 
-        g_globalState.forceTempAnimations = true;
-//        g_globalState.isMouseDownAndClickedOnCanvas = true;
-        applyTemporaryTransformationsToActiveLayer();
-        wipeTemporaryAppliedTransformations();
-
-        draw();
-        window.requestAnimationFrame(animation6);
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
+    function animation5(frame) {
+        var animationFrames = 120*mult;
 
-    function animation5() {
-        var endTime = 2000*mult;
-        g_globalState.transformationMatBeforeTemporaryTransformations = animationStartMatrix;
-        const animationSpeed = 1.2;
-        wipeTemporaryAppliedTransformations();
-
-        var currentTime = new Date();
-        var prog = currentTime.getTime() - animationStartTime.getTime();
-        if(prog > endTime){
-            animationStartTime = new Date();
-            g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-            animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
-            window.requestAnimationFrame(animation6);
-            return;
-        }
-
-        var endRotation = 120;
-
-        prog *= animationSpeed;
-        g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
-        var value = (((2 * Math.PI) / 60) * prog)%1000;
-//        g_globalState.temporaryAppliedTransformations.translate.x = 10;
-        var frame = prog/endTime;
-
-//        g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:80+150,y:80+150};
-
+        animationStart();
+        
+        var percentageDone = frame/animationFrames;
         var endx = -100;
         var endy = 200;
         g_globalState.temporaryAppliedTransformations.translate = {
-            x: -endx*frame,
-            y: -endy*frame
+            x: -endx*percentageDone,
+            y: -endy*percentageDone
         };
-//        console.log(value);
-//        g_globalState.temporaryAppliedTransformations.rotation = value;
 
-        g_globalState.forceTempAnimations = true;
-//        g_globalState.isMouseDownAndClickedOnCanvas = true;
-        applyTemporaryTransformationsToActiveLayer();
-        wipeTemporaryAppliedTransformations();
-
-        draw();
-        window.requestAnimationFrame(animation5);
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
-    function animation4() {
-        var endTime = 2000*mult;
-        g_globalState.transformationMatBeforeTemporaryTransformations = animationStartMatrix;
-        const animationSpeed = 1.2;
-        wipeTemporaryAppliedTransformations();
+    function animation4(frame) {
+        var animationFrames = 120*mult;
 
-        var currentTime = new Date();
-        var prog = currentTime.getTime() - animationStartTime.getTime();
-        if(prog > endTime){
-            animationStartTime = new Date();
-            g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-            animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
-            window.requestAnimationFrame(animation5);
-            return;
-        }
-
-        var endRotation = 120;
-
-        prog *= animationSpeed;
-        g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
-        var value = (((2 * Math.PI) / 60) * prog)%1000;
-//        g_globalState.temporaryAppliedTransformations.translate.x = 10;
-        var frame = prog/endTime;
-
-//        g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:80+150,y:80+150};
-
+        animationStart();
+        
+        var percentageDone = frame/animationFrames;
         var endx = -100;
         var endy = -500;
         g_globalState.temporaryAppliedTransformations.translate = {
-            x: -endx*frame,
-            y: -endy*frame
+            x: -endx*percentageDone,
+            y: -endy*percentageDone
         };
-//        console.log(value);
-//        g_globalState.temporaryAppliedTransformations.rotation = value;
 
-        g_globalState.forceTempAnimations = true;
-//        g_globalState.isMouseDownAndClickedOnCanvas = true;
-        applyTemporaryTransformationsToActiveLayer();
-        wipeTemporaryAppliedTransformations();
-
-        draw();
-        window.requestAnimationFrame(animation4);
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
-    function animation3() {
-        var endTime = 2800*mult;
-        g_globalState.transformationMatBeforeTemporaryTransformations = animationStartMatrix;
-        const animationSpeed = 1.2;
-        wipeTemporaryAppliedTransformations();
+    function animation3(frame) {
+        var animationFrames = 120*mult;
 
-        var currentTime = new Date();
-        var prog = currentTime.getTime() - animationStartTime.getTime();
-        if(prog > endTime){
-            animationStartTime = new Date();
-            g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-            animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
-            window.requestAnimationFrame(animation4);
-            return;
-        }
-
-        var endRotation = 120;
-
-        prog *= animationSpeed;
-        g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
-        var value = (((2 * Math.PI) / 60) * prog)%1000;
-//        g_globalState.temporaryAppliedTransformations.translate.x = 10;
-        var frame = prog/endTime;
-
-//        g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:80+150,y:80+150};
-
+        animationStart();
+        
+        var percentageDone = frame/animationFrames;
         var endx = 250;
         var endy = 250;
         g_globalState.temporaryAppliedTransformations.translate = {
-            x: -endx*frame,
-            y: -endy*frame
+            x: -endx*percentageDone,
+            y: -endy*percentageDone
         };
-//        console.log(value);
-//        g_globalState.temporaryAppliedTransformations.rotation = value;
 
-        g_globalState.forceTempAnimations = true;
-//        g_globalState.isMouseDownAndClickedOnCanvas = true;
-        applyTemporaryTransformationsToActiveLayer();
-        wipeTemporaryAppliedTransformations();
-
-        draw();
-        window.requestAnimationFrame(animation3);
+        animationEnd(frame);
+        return (frame >= animationFrames);
     }
 
-    function animation2() {
-        var endTime = 2000*mult;
-        g_globalState.transformationMatBeforeTemporaryTransformations = animationStartMatrix;
-        const animationSpeed = 1.2;
-        wipeTemporaryAppliedTransformations();
+    function animation2(frame) {
+        var animationFrames = 120*mult;
 
-        var currentTime = new Date();
-        var prog = currentTime.getTime() - animationStartTime.getTime();
-        if(prog > endTime){
-            animationStartTime = new Date();
-            g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
-            animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
-            window.requestAnimationFrame(animation3);
-            return;
-        }
-
-        var endx = 0;
-        var endy = 250;
+        animationStart();
+        
+        var percentageDone = frame/animationFrames;
         var endRotation = 120;
-
-        prog *= animationSpeed;
-        g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
-        var value = (((2 * Math.PI) / 60) * prog)%1000;
-//        g_globalState.temporaryAppliedTransformations.translate.x = 10;
-        var frame = prog/endTime;
-
-
         g_globalState.temporaryAppliedTransformations.transformationCenterPoint = {x:80+150,y:80+150};
-        g_globalState.temporaryAppliedTransformations.rotation = frame * endRotation;
-        var scale = (2*frame)+1;
+        g_globalState.temporaryAppliedTransformations.rotation = percentageDone * endRotation;
+        var scale = (2*percentageDone)+1;
         var scaleMatrix = getDirectionalScaleMatrix(Math.sqrt(scale), 1 / Math.sqrt(scale), 45);
         g_globalState.temporaryAppliedTransformations.directionalScaleMatrix = scaleMatrix;
 
+        animationEnd(frame);
+        return (frame >= animationFrames);
+    }
 
-//        g_globalState.temporaryAppliedTransformations.translate = {
-//            x: -endx*frame,
-//            y: -endy*frame
-//        };
-//        console.log(value);
-//        g_globalState.temporaryAppliedTransformations.rotation = value;
+    function animation1(frame) {
+        var animationFrames = 60*mult;
 
-        g_globalState.forceTempAnimations = true;
-//        g_globalState.isMouseDownAndClickedOnCanvas = true;
+        animationStart();
+        
+        var percentageDone = frame/animationFrames;
+        var endx = 80;
+        var endy = 80;
+        g_globalState.temporaryAppliedTransformations.translate = {
+            x: -endx*percentageDone,
+            y: -endy*percentageDone
+        };
+
+        animationEnd(frame);
+        return (frame >= animationFrames);
+    }
+
+    function animationStart() {
+        g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
+        g_globalState.transformationMatBeforeTemporaryTransformations = deepMatrixClone(animationStartMatrix);
+        wipeTemporaryAppliedTransformations();
+    }
+
+    function deepMatrixClone(inputMat) {
+        return[
+            inputMat[0].slice(0), 
+            inputMat[1].slice(0), 
+            inputMat[2].slice(0),
+            ]; 
+    }
+
+    var g_frame = 1;
+
+
+
+    function drawAllImagesToCanvasAndSend(g_frame) {
+//        var canvas = document.createElement('canvas'),
+//            ctx = canvas.getContext('2d');
+//        canvas.width = 700;
+//        canvas.height = 600;
+        var canvas = document.getElementById('bigCanvas'),
+            ctx = canvas.getContext('2d');
+        paintCanvasWhite(ctx);
+
+        var ctx1= document.getElementById('queryImageCanvasImageContent');
+        var ctx2= document.getElementById('queryImageCanvasUiOverlay');
+        var ctx3= document.getElementById('databaseImageCanvasImageContent');
+        var ctx4= document.getElementById('databaseImageCanvasUiOverlay');
+
+        ctx.drawImage(ctx1, 0, 0);
+        ctx.drawImage(ctx2, 0, 0);
+        ctx.drawImage(ctx3, 0, 325);
+        ctx.drawImage(ctx4, 0, 325);
+
+
+
+        var image1 = canvas.toDataURL('image/jpeg', 0.92).replace("image/jpeg", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.
+//
+        var regex = /^data:.+\/(.+);base64,(.*)$/;
+        var matches;
+        matches = image1.match(regex);
+        var data1 = matches[2];
+
+        var info = {
+            'image1': {
+                'imageData': data1,
+                'frameNumber': g_frame
+            }
+        };
+
+        $.ajax({
+            url: 'http://127.0.0.1/runTestWithJsonData',
+            type: 'POST',
+            data: JSON.stringify(info),
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            async: true,
+            success: function (msg) {
+                console.log(msg);
+            },
+            error: function (msg) {
+                console.log(msg);
+            }
+        });
+    }
+
+    function animationEnd(frame) {
         applyTemporaryTransformationsToActiveLayer();
         wipeTemporaryAppliedTransformations();
 
         draw();
-        window.requestAnimationFrame(animation2);
+        drawAllImagesToCanvasAndSend(g_frame);
     }
 
-    function animation1() {
-        var endTime = 1000*mult;
-        g_globalState.transformationMatBeforeTemporaryTransformations = animationStartMatrix;
-        const animationSpeed = 1.2;
-        wipeTemporaryAppliedTransformations();
+    var currentAnimation = 0;
+    var prevAnimationsFrameCount = 0;
+    function doAnimations(frame) {
+        g_frame = frame;//HACK
+        var isDone = false;
+        switch(currentAnimation) {
+            case 0:
+                isDone = animation1(frame);
+                break;
+            case 1:
+                isDone = animation2(frame-prevAnimationsFrameCount);
+                break;
+            case 2:
+                isDone = animation3(frame-prevAnimationsFrameCount);
+                break;
+            case 3:
+                isDone = animation4(frame-prevAnimationsFrameCount);
+                break;
+            case 4:
+                isDone = animation5(frame-prevAnimationsFrameCount);
+                break;
+            case 5:
+                isDone = animation6(frame-prevAnimationsFrameCount);
+                break;
+            case 6:
+                isDone = animation7(frame-prevAnimationsFrameCount);
+                break;                
+            default:
+                return true;
+        }
 
-        var currentTime = new Date();
-        var prog = currentTime.getTime() - animationStartTime.getTime();
-        if(prog > endTime){
+        if(isDone){
+            g_globalState.forceTempAnimations = true;
+            g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
             animationStartTime = new Date();
             g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
             animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
-            window.requestAnimationFrame(animation2);
-            return;
+            prevAnimationsFrameCount = frame;
+            currentAnimation++;
+        }
+    }
+
+    //returns true when finished
+    function computeFrames(frame){
+        if (doAnimations(frame)) {
+            return
         }
 
-
-
-        prog *= animationSpeed;
-        g_globalState.activeCanvas.activeLayer = g_globalState.interactiveCanvasState.layers[0];
-        var value = (((2 * Math.PI) / 60) * prog)%1000;
-//        g_globalState.temporaryAppliedTransformations.translate.x = 10;
-        var frame = prog/endTime;
-        g_globalState.temporaryAppliedTransformations.translate = {
-            x: -endx*frame,
-            y: -endy*frame
-        };
-//        console.log(value);
-//        g_globalState.temporaryAppliedTransformations.rotation = value;
-
-        g_globalState.forceTempAnimations = true;
-//        g_globalState.isMouseDownAndClickedOnCanvas = true;
-        applyTemporaryTransformationsToActiveLayer();
-        wipeTemporaryAppliedTransformations();
-
-        draw();
-        window.requestAnimationFrame(animation1);
+        let nextFrame = frame + 1;
+        window.requestAnimationFrame(function () {
+                computeFrames(nextFrame);
+            });
     }
 
     function startAnimation() {
+
         reset();
         g_drawingOptions.drawImageOutline = false;
         g_drawingOptions.drawInteractiveCanvasUiLayer = true;//false;
@@ -759,7 +700,10 @@
         animationStartTime = new Date();
         g_globalState.transformationMatBeforeTemporaryTransformations = g_globalState.activeCanvas.activeLayer.appliedTransformations;
         animationStartMatrix = g_globalState.transformationMatBeforeTemporaryTransformations;
-        window.requestAnimationFrame(animation1);
+        var frameStart = 0;
+
+        computeFrames(1)
+
     }
 
 </script>

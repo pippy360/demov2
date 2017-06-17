@@ -13,7 +13,9 @@ var g_drawingOptions = {
     drawKeypoints: false,
     drawTriangles: true,
     forceApplyTransformations: false,
-    drawImageOutline: true
+    drawImageOutline: true,
+    drawInteractiveCanvasUiLayer: true,
+    drawReferenceCanvasUiLayer: true,
 };
 
 //
@@ -116,12 +118,16 @@ function newGlobalState() {
         isMouseDownAndClickedOnCanvas: null,
         temporaryAppliedTransformations: null,
         transformationMatBeforeTemporaryTransformations: null,
-        pageMouseDownPosition: null
+        pageMouseDownPosition: null,
+        highlightedTriangleListIndex: null
     };
 }
 
 function reset() {
-    init();
+    let saved = g_globalState.currentTranformationOperationState;
+    initAfterImageLoad();
+    _debug_addlayer('images/background_resize.jpg');
+    setCurrnetOperation(saved);
 }
 
 var enum_TransformationOperation = {
@@ -135,11 +141,6 @@ var enum_TransformationOperation = {
 //
 // getters
 //
-
-function toggleDrawUIOverlayMode() {
-    g_shouldDrawUIOverlay = !g_shouldDrawUIOverlay;
-    draw();
-}
 
 
 function applyTransformationToImageOutline(imageOutline, appliedTransformations) {
@@ -528,7 +529,11 @@ function convertKeypointsToMatrixKeypoints(keypoints) {
     return ret;
 }
 
-function convertTransformationObjectToTransformationMatrix(transformations) {
+function convertTransformationObjectToTransformationMatrix(transformations, shapeCenter) {
+    if (!shapeCenter) {
+        shapeCenter = transformations.transformationCenterPoint;
+    }
+
     var transformationCenterPoint = transformations.transformationCenterPoint;
     var ret = getIdentityMatrix();
 
@@ -537,8 +542,6 @@ function convertTransformationObjectToTransformationMatrix(transformations) {
 
     ret = matrixMultiply(ret, getTranslateMatrix(transformationCenterPoint.x, transformationCenterPoint.y));
 
-    ret = matrixMultiply(ret, getScaleMatrix(transformations.uniformScale, transformations.uniformScale));
-
     //Rotate
     ret = matrixMultiply(ret, getRotatoinMatrix(-transformations.rotation));
 
@@ -546,6 +549,10 @@ function convertTransformationObjectToTransformationMatrix(transformations) {
     ret = matrixMultiply(ret, transformations.directionalScaleMatrix);
 
     ret = matrixMultiply(ret, getTranslateMatrix(-transformationCenterPoint.x, -transformationCenterPoint.y));
+
+    ret = matrixMultiply(ret, getTranslateMatrix(shapeCenter.x, shapeCenter.y));
+    ret = matrixMultiply(ret, getScaleMatrix(transformations.uniformScale, transformations.uniformScale));
+    ret = matrixMultiply(ret, getTranslateMatrix(-shapeCenter.x, -shapeCenter.y));
 
     return ret;
 }
@@ -773,12 +780,20 @@ function highlightTriangle(layerIndex, triangleIndex) {
     //draw the outline of the triangle on the original canvas
     var enableFill = true;
     clearCanvasByContext(interactiveHighlightedCanvasContext);
-    drawTriangleWithColour(interactiveHighlightedCanvasContext, triangleStruct.interactiveTriangle,
-        [255, 255, 255], [24, 61, 78], enableFill);
     clearCanvasByContext(referenceHighlightedCanvasContext);
-    drawTriangleWithColour(referenceHighlightedCanvasContext, triangleStruct.referenceTriangle,
-        [255, 255, 255], [24, 61, 78], enableFill);
-
+    
+    if (g_drawingOptions.drawUiOverlay) {
+        if (g_drawingOptions.drawInteractiveCanvasUiLayer) {    
+            drawTriangleWithColour(interactiveHighlightedCanvasContext, triangleStruct.interactiveTriangle,
+                [255, 255, 255], [24, 61, 78], enableFill);
+        }
+        if (g_drawingOptions.drawReferenceCanvasUiLayer) {
+            drawTriangleWithColour(referenceHighlightedCanvasContext, triangleStruct.referenceTriangle,
+                [255, 255, 255], [24, 61, 78], enableFill);
+        }
+    } else {
+        //skip
+    }
 
     //fill the fragment canvases
     var interactiveCanvas = g_globalState.interactiveCanvasState.imageLayerCanvas;
@@ -1019,12 +1034,14 @@ function containsMatchingTriangle(addedReferenceTriangles, refTri) {
     return false;
 }
 
-function getTableEntry(key, layerIndex, area) {
+function getTableEntry(key, layerIndex, area, listIndex) {
     //FIXME: i don't like these hardcoded strings
-    var outputStrClass = "triangleTRAll " + "triangleTR" + layerIndex + "_" + key.value;
+    const triangleIndex = key.value;
+    const outputStrClass = "triangleTRAll " + "triangleTR" + layerIndex + "_" + triangleIndex;
     var outputStr =
-        "<tr class=\"" + outputStrClass + "\" onmouseover=\"highlightTriangle(" + layerIndex + ", " + key.value + ")\">" +
-        "<td>" + key.value + "</td>" +
+        "<tr class=\"" + outputStrClass + "\" triangleIndex=\"" + triangleIndex
+        + "\" layerIndex=\""+layerIndex+"\" onmouseover=\"highlightTriangleByListIndex(" + listIndex + ")\">" +
+        "<td>" +  triangleIndex + "</td>" +
         "<td>" + Math.round(area) + " </td>" +
         "</tr>";
     return outputStr;
@@ -1182,7 +1199,7 @@ function drawUiLayer(canvasContext, keypoints, triangles, layerColour) {
     drawTriangles(canvasContext, triangles, layerColour);
 }
 
-function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage) {
+function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage, skipUiLayer) {
 
     const imageCanvasContext = canvasState.imageLayerCanvasContext;
     const uiCanvasContext = canvasState.uiLayerCanvasContext;
@@ -1195,7 +1212,12 @@ function drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCrop
     }
     var transformationsMat = drawingLayer.layer.appliedTransformations;
     drawBackgroudImageWithTransformationMatrix(imageCanvasContext, drawingImage, transformationsMat);
-    drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
+    
+    if (skipUiLayer || !g_drawingOptions.drawUiOverlay) {
+
+    }else{
+        drawUiLayer(uiCanvasContext, drawingLayer.transformedVisableKeypoints, drawingLayer.computedTriangles, drawingLayer.layer.colour);
+    }
 }
 
 function clearOutputListAndWipeCanvas() {
@@ -1204,18 +1226,33 @@ function clearOutputListAndWipeCanvas() {
     var c2 = g_globalState.referenceCanvasState.highlightedTriangleLayerCanvasContext;
     clearCanvasByContext(c1);
     clearCanvasByContext(c2);
+    $("#output").css("visibility", "hidden");
+}
+
+function highlightTriangleByListIndex(index) {
+    g_globalState.highlightedTriangleListIndex = index;
+    
+    const firstElem = $('#triangleListBody tr').eq(index);
+    var layerIndex = firstElem.attr("layerIndex");
+    var triangleIndex = firstElem.attr("triangleIndex");
+    highlightTriangle(parseInt(layerIndex), parseInt(triangleIndex));
+}
+
+function highlightFirstElementOfOutputList() {
+    highlightTriangleByListIndex(0);
 }
 
 function generateOutputList(triangleMapArray) {
     var outputStr = "";
-
+    var listCount = 0;
     for (var i = 0; i < triangleMapArray.length; i++) {
         var triangleMap = triangleMapArray[i];
         var keys = triangleMap.keys();
         for (var key = keys.next(); !key.done; key = keys.next()) { //iterate over keys
             var tri = triangleMap.get(key.value).referenceTriangle;
             var area = getArea(tri);
-            outputStr = outputStr + getTableEntry(key, i, area);
+            outputStr = outputStr + getTableEntry(key, i, area, listCount);
+            listCount++;
         }
     }
 
@@ -1228,6 +1265,11 @@ function generateOutputList(triangleMapArray) {
         });
 
     g_globalState.outputListState.triangleMapArray = triangleMapArray;
+
+    if (listCount > 0) {
+        highlightFirstElementOfOutputList();
+    }
+    $("#output").css("visibility", "visible");
 }
 
 
@@ -1361,7 +1403,19 @@ function drawLayers(canvasState, drawingLayers) {
         var isActiveCanvas = g_globalState.activeCanvas == canvasState;
         var isActiveLayer = canvasState.activeLayer == drawingLayer.layer;
         var dontCropImage = isActiveLayer && isCroppingEffectActive && isActiveCanvas;
-        drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage);
+        var skipUiLayer = isCroppingEffectActive && isActiveCanvas && !isActiveLayer;
+        if (!g_drawingOptions.drawInteractiveCanvasUiLayer) {
+            if (canvasState === g_globalState.interactiveCanvasState) {
+                skipUiLayer = true;
+            }
+        }
+
+        if (!g_drawingOptions.drawReferenceCanvasUiLayer) {
+            if (canvasState === g_globalState.referenceCanvasState) {
+                skipUiLayer = true;
+            }
+        }        
+        drawLayerWithAppliedTransformations(canvasState, drawingLayer, dontCropImage, skipUiLayer);
     }
 
     if (isCroppingEffectActive) {
@@ -1453,6 +1507,27 @@ function changeInteractiveCanvasSize(width, height) {
     draw();
 }
 
+function toggleDrawUIOverlayWrapper(event) {
+    g_drawingOptions.drawUiOverlay = !g_drawingOptions.drawUiOverlay;
+    $("#toggleDrawUIOverlayButton").toggleClass('backgroundColourGrey');
+    draw();
+    
+    (0);//clear the triangle//HACK
+}
+
+function toggleDrawReferenceUIOverlayWrapper(event) {
+    g_drawingOptions.drawReferenceCanvasUiLayer = !g_drawingOptions.drawReferenceCanvasUiLayer;
+    $("#toggleDrawReferenceUIOverlayButton").toggleClass('backgroundColourGrey');
+    draw();
+    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
+}
+
+function toggleDrawInteractiveUIOverlayWrapper(event) {
+    g_drawingOptions.drawInteractiveCanvasUiLayer = !g_drawingOptions.drawInteractiveCanvasUiLayer;
+    $("#toggleDrawInteractiveUIOverlayButton").toggleClass('backgroundColourGrey');
+    draw();
+    highlightTriangleByListIndex(g_globalState.highlightedTriangleListIndex);
+}
 
 $(document).mousedown(function (e) {
     //ignore
@@ -1707,6 +1782,38 @@ function handleMouseMoveCrop(mousePosition, activeLayer) {
     activeLayer.nonTransformedImageOutline.push(transformedPoint);
 }
 
+function highlightPrevTriangle() {
+    var newIndex = g_globalState.highlightedTriangleListIndex - 1;
+    if (newIndex < 0) {
+        newIndex = 0;
+    }
+    var pos = $('#triangleListBody tr:nth-child('+(newIndex+1)+')').position().top - $("#triangleListBody").position().top;
+    $(".trianglesListInnerWrapper").scrollTop(pos);
+    highlightTriangleByListIndex(newIndex);
+}
+
+function highlightNextTriangle() {
+    var newIndex = g_globalState.highlightedTriangleListIndex + 1;
+    var len = $('#triangleListBody tr').length;
+    if (newIndex >= len){
+        newIndex = len - 1;
+    }
+    var pos = $('#triangleListBody tr:nth-child('+(newIndex+1)+')').position().top - $("#triangleListBody").position().top;
+    $(".trianglesListInnerWrapper").scrollTop(pos);
+    highlightTriangleByListIndex(newIndex);
+}
+
+function getCenterPointOfPoly(arr) {
+    var minX, maxX, minY, maxY;
+    for(var i=0; i< arr.length; i++){
+        minX = (arr[i].x < minX || minX == null) ? arr[i].x : minX;
+        maxX = (arr[i].x > maxX || maxX == null) ? arr[i].x : maxX;
+        minY = (arr[i].y < minY || minY == null) ? arr[i].y : minY;
+        maxY = (arr[i].y > maxY || maxY == null) ? arr[i].y : maxY;
+    }
+    return [(minX + maxX) /2, (minY + maxY) /2];
+}
+
 function handleMouseMoveOnDocument(e) {
     var pageMousePosition = getCurrentPageMousePosition(e);
     var globalState = g_globalState;
@@ -1731,10 +1838,16 @@ function handleMouseMoveOnDocument(e) {
             break;
     }
 
-    var layer = getActiveLayer(globalState);
-    var temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations);
-    savedLayerMat = globalState.transformationMatBeforeTemporaryTransformations;
-    layer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, savedLayerMat);
+    const activeLayer = getActiveLayer(globalState);
+    const imageOutline = applyTransformationToImageOutline(activeLayer.nonTransformedImageOutline, activeLayer.appliedTransformations);
+    var shapeCenter = getCenterPointOfPoly(imageOutline);
+    shapeCenter = {
+        x: shapeCenter[0],
+        y: shapeCenter[1]
+    };
+    const temporaryAppliedTransformationsMat = convertTransformationObjectToTransformationMatrix(globalState.temporaryAppliedTransformations, shapeCenter);
+    const savedLayerMat = globalState.transformationMatBeforeTemporaryTransformations;
+    activeLayer.appliedTransformations = matrixMultiply(temporaryAppliedTransformationsMat, savedLayerMat);
 }
 
 function drawLayerImageOutline(ctx, imageOutlinePolygon) {
@@ -1813,7 +1926,8 @@ function handleMouseDownOnCanvas(e) {
     //FIXME: set the active canvas
 
     const currentActiveLayer = g_globalState.activeCanvas.activeLayer;
-    const clickedActiveLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, currentActiveLayer);
+    // const clickedActiveLayer = getActiveLayerWithCanvasPosition(canvasMousePosition, g_globalState.activeCanvas.layers, currentActiveLayer);
+    const clickedActiveLayer = g_globalState.activeCanvas.activeLayer = g_globalState.activeCanvas.layers[0];
     g_globalState.activeCanvas.activeLayer = clickedActiveLayer;
 
     g_globalState.transformationMatBeforeTemporaryTransformations = clickedActiveLayer.appliedTransformations;
@@ -1881,10 +1995,36 @@ function buildCommonCanvasState(imageCanvasId, overlayCanvasId, imageOutlineCanv
 
     returnedCanvasState.layers = [];
     //FIXME: reference image layers done have keypoints, they are computed from the associated interactive image layer
-    var keypoints = generateRandomKeypoints({
-        width: preloadedImage.width,
-        height: preloadedImage.height
-    }, g_numberOfKeypoints)
+    var keypoints = [{ x: 60, y: 181},
+        { x: 87, y: 91},
+        { x: 44, y: 180},
+        { x: 203, y: 22},
+        { x: 197, y: 223},
+        { x: 217, y: 233},
+        { x: 138, y: 82},
+        { x: 89, y: 16},
+        { x: 247, y: 184},
+        { x: 104, y: 276},
+        { x: 158, y: 265},
+        { x: 163, y: 35},
+        { x: 220, y: 90},
+        { x: 256, y: 187},
+        { x: 102, y: 24},
+        { x: 124, y: 28},
+        { x: 205, y: 68},
+        { x: 97, y: 175},
+        { x: 149, y: 156},
+        { x: 252, y: 278},
+        { x: 199, y: 221},
+        { x: 51, y: 246},
+        { x: 11, y: 84},
+        { x: 138, y: 135},
+        { x: 225, y: 57},
+        { x: 271, y: 106},
+        { x: 55, y: 278},
+        { x: 209, y: 112},
+        { x: 243, y: 186},
+        { x: 110, y: 54}];
     returnedCanvasState.layers.push(newLayer(preloadedImage, keypoints, BLUE_COLOUR));
     returnedCanvasState.activeLayer = returnedCanvasState.layers[0];
     return returnedCanvasState;
@@ -1908,7 +2048,7 @@ function buildGlobalState() {
     const referenceCanvasState = buildReferenceCanvasState();
     const interactiveCanvasState = buildInteractiveCanvasState();
 
-    //FIXME: come up with a better way of handling associatedLayers 
+    //FIXME: come up with a better way of handling associatedLayers
     referenceCanvasState.layers[0].associatedLayer = interactiveCanvasState.layers[0];
     interactiveCanvasState.layers[0].associatedLayer = referenceCanvasState.layers[0];
 
@@ -1931,7 +2071,8 @@ function buildGlobalState() {
 function initAfterImageLoad() {
     g_globalState = buildGlobalState();
     setCurrnetOperation(enum_TransformationOperation.TRANSLATE);
-    draw();
+    var triangleMapArray = draw();
+    generateOutputList(triangleMapArray);
     window.requestAnimationFrame(drawImageOutlineInternal);
 }
 
